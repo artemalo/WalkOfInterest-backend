@@ -1,0 +1,66 @@
+data/
+*.pbf
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Компилированные классы
+*.class
+
+# Пакеты
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Логи и базы данных
+*.log
+*.sql
+*.sqlite
+*.db
+
+# Временные файлы ОС
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Локальные настройки
+*.local
+
+# Файлы редакторов
+*.swp
+*.swo
+*~
+
+# Data directories
+/data/graphhopper/cache/
+/data/graphhopper/default-gh/
+/data/postgres/
+
+# Дополнительные игнорируемые папки в backend
+backend/**/target/
+backend/**/.idea/
+backend/**/*.iml
