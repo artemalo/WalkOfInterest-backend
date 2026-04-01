@@ -9,7 +9,7 @@ import sfedu.ictis.woi.model.dto.PointDTO;
 import sfedu.ictis.woi.service.PoiService;
 
 @RestController
-@RequestMapping("/api/v1/route")
+//@RequestMapping("/api/v1/route")
 public class PoisController {
     private final PoiService poiService;
 
@@ -18,7 +18,14 @@ public class PoisController {
     }
 
     @GetMapping("/min-time")
-    public ResponseEntity<MinTimeResponse> getMinTime(@RequestParam PointDTO p1, @RequestParam PointDTO p2) {
+		public ResponseEntity<MinTimeResponse> getMinTime(
+		        @RequestParam double lat1,
+		        @RequestParam double lon1,
+		        @RequestParam double lat2,
+		        @RequestParam double lon2) {
+
+		    PointDTO p1 = new PointDTO(lat1, lon1);
+		    PointDTO p2 = new PointDTO(lat2, lon2);
         return ResponseEntity.ok(new MinTimeResponse(poiService.calculateMinTime(p1, p2)));
     }
 
