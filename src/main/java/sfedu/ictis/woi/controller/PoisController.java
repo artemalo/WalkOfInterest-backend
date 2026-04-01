@@ -9,7 +9,7 @@ import sfedu.ictis.woi.model.dto.PointDTO;
 import sfedu.ictis.woi.service.PoiService;
 
 @RestController
-//@RequestMapping("/api/v1/route")
+@RequestMapping("/")
 public class PoisController {
     private final PoiService poiService;
 
