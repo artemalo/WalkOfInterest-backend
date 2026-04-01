@@ -13,11 +13,11 @@ import java.util.List;
 public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
     @Query(value = """
         SELECT
-            c.id as cat_id, c.category_name, c.category_description, c.category_icon,
-            s.id as sub_id, s.subcategory_name, s.weight,
-            si.subcategory_description, si.subcategory_icon,
-            p.id as poi_id,
-            pl.langue, pl.poi_name, pl.poi_description,
+            c.id as catId, c.category_name as catName, c.category_description as catDescription, c.category_icon as catIcon,
+            s.id as subId, s.subcategory_name as subName, s.weight as weight,
+            si.subcategory_description as subDescription, si.subcategory_icon as subIcon,
+            p.id as poiId,
+            pl.langue, pl.poi_name as poiName, pl.poi_description as poiDesc,
             ST_X(ST_Centroid(p.geom)) as lon,
             ST_Y(ST_Centroid(p.geom)) as lat
         FROM pois p
