@@ -1,6 +1,6 @@
 package sfedu.ictis.woi.model.entity;
 
-import org.locationtech.jts.geom.Geometry; // Используем JTS
+import org.locationtech.jts.geom.Geometry;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -32,4 +32,8 @@ public class PoiEntity {
 
     @Column(name = "last_update", nullable = false, insertable = false, updatable = false)
     private LocalDateTime lastUpdate;
+
+    public boolean isUserGenerated() {
+        return this.userId != null;
+    }
 }
