@@ -2,6 +2,7 @@ package sfedu.ictis.woi.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import sfedu.ictis.woi.model.entity.PoiEntity;
 import sfedu.ictis.woi.projection.FlatPoiProjection;
@@ -24,11 +25,10 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
         JOIN subcategories s ON pst.subcategory_id = s.id
         JOIN categories c ON s.category_id = c.id
         LEFT JOIN subcategories_info si ON s.id = si.subcategory_id
-        
         LEFT JOIN LATERAL (
             SELECT
             	langue,
-                poi_name
+                poi_name,
                 poi_description
             FROM pois_langues
             WHERE poi_id = p.id
@@ -45,5 +45,8 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
         WHERE ST_Within(p.geom, ST_GeomFromText(:isochroneWkt, 4326))
         ORDER BY s.weight DESC;
         """, nativeQuery = true)
-    List<FlatPoiProjection> findPoisInIsochrone(String lang, String wkt);
+    List<FlatPoiProjection> findPoisInIsochrone(
+            @Param("lang") String lang,
+            @Param("isochroneWkt") String wkt
+            );
 }

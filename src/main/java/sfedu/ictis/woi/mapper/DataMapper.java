@@ -32,7 +32,7 @@ public class DataMapper {
 
                     // POI в список тегов
                     List<SubTagDTO> tags = list.stream()
-                            .map(p -> new SubTagDTO(p.getSubId(), p.getSubName()))
+                            .map(p -> new SubTagDTO(p.getSubId(), p.getWeight()))
                             .distinct() // -дубли
                             .toList();
 
