@@ -6,6 +6,7 @@ public record MarkerDTO(
         Long id,
         String name,
         String description,
+        String lang,
         double lat,
         double lon,
         List<SubTagDTO> tags

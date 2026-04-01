@@ -71,6 +71,7 @@ public class DataMapper {
                                                 rp.winner().getPoiId(),
                                                 rp.winner().getPoiName(),
                                                 rp.winner().getPoiDesc(),
+                                                rp.winner().getPoiLang(),
                                                 rp.winner().getLat(),
                                                 rp.winner().getLon(),
                                                 rp.allTags()

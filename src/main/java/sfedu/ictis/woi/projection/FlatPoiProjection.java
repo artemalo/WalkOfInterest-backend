@@ -16,6 +16,7 @@ public interface FlatPoiProjection {
 
     // pois
     Long getPoiId();
+    String getPoiLang();
     String getPoiName();
     String getPoiDesc();
 

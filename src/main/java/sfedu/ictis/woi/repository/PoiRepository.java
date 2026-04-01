@@ -17,7 +17,7 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
             s.id as subId, s.subcategory_name as subName, s.weight as weight,
             si.subcategory_description as subDescription, si.subcategory_icon as subIcon,
             p.id as poiId,
-            pl.langue, pl.poi_name as poiName, pl.poi_description as poiDesc,
+            pl.langue as poiLang, pl.poi_name as poiName, pl.poi_description as poiDesc,
             ST_X(ST_Centroid(p.geom)) as lon,
             ST_Y(ST_Centroid(p.geom)) as lat
         FROM pois p
