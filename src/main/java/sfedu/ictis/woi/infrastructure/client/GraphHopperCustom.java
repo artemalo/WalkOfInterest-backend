@@ -12,7 +12,7 @@ public class GraphHopperCustom implements GraphHopperRequest {
 
     @Override
     public String fetchIsochrone(double lat, double lon, int seconds) {
-        double speed = 1.5;
+        double speed = 1.4;
         double radius = speed * seconds;
 
         int points = 64;
