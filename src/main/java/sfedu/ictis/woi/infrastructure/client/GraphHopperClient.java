@@ -3,12 +3,16 @@ package sfedu.ictis.woi.infrastructure.client;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Mono;
 import sfedu.ictis.woi.exception.ExternalServiceException;
 import sfedu.ictis.woi.model.dto.PointDTO;
 import tools.jackson.databind.JsonNode;
 
 @Component
 public class GraphHopperClient implements GraphHopperRequest {
+    private static final String SERVICE_NAME = "GraphHopper";
     private final WebClient webClient;
 
     public GraphHopperClient(WebClient.Builder builder, @Value("${gh.url}") String url) {
@@ -16,7 +20,7 @@ public class GraphHopperClient implements GraphHopperRequest {
     }
 
     public String fetchIsochrone(double lat, double lon, int seconds) {
-        JsonNode response = webClient.get()
+        JsonNode response = handleErrors(webClient.get()
                 .uri(uri -> uri.path("/isochrone")
                         .queryParam("point", lat + "," + lon)
                         .queryParam("time_limit", seconds)
@@ -24,17 +28,17 @@ public class GraphHopperClient implements GraphHopperRequest {
                         .build())
                 .retrieve()
                 .bodyToMono(JsonNode.class) // 4xx или 5xx выбросит исключение
-                .block();
+        ).block();
 
         if (response == null || response.isMissingNode()) {
-            throw new ExternalServiceException("GraphHopper returned an empty response for isochrone");
+            throw new ExternalServiceException(SERVICE_NAME, "GraphHopper returned an empty response for isochrone");
         }
 
         return parseToWkt(response);
     }
 
     public long getMinRouteTime(PointDTO p1, PointDTO p2) {
-        JsonNode response = webClient.get()
+        JsonNode response = handleErrors(webClient.get()
                 .uri(uri -> uri.path("/route")
                         .queryParam("point", p1.lat() + "," + p1.lon())
                         .queryParam("point", p2.lat() + "," + p2.lon())
@@ -44,10 +48,10 @@ public class GraphHopperClient implements GraphHopperRequest {
                         .build())
                 .retrieve()
                 .bodyToMono(JsonNode.class)
-                .block();
+        ).block();
 
         if (response == null || response.path("paths").isEmpty()) {
-            throw new ExternalServiceException("Could not calculate route between points");
+            throw new ExternalServiceException(SERVICE_NAME, "Could not calculate route between points");
         }
 
         long timeMs = response.path("paths").get(0).path("time").asLong();
@@ -95,5 +99,12 @@ public class GraphHopperClient implements GraphHopperRequest {
 
         wkt.append("))");
         return wkt.toString();
+    }
+
+    private <T> Mono<T> handleErrors(Mono<T> mono) {
+        return mono.onErrorMap(WebClientRequestException.class,
+                        ex -> new ExternalServiceException(SERVICE_NAME, "Недоступен", ex))
+                .onErrorMap(WebClientResponseException.class,
+                        ex -> new ExternalServiceException(SERVICE_NAME, "Ошибка: " + ex.getStatusCode(), ex));
     }
 }
