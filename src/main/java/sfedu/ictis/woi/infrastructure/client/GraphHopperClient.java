@@ -8,7 +8,7 @@ import sfedu.ictis.woi.model.dto.PointDTO;
 import tools.jackson.databind.JsonNode;
 
 @Component
-public class GraphHopperClient {
+public class GraphHopperClient implements GraphHopperRequest {
     private final WebClient webClient;
 
     public GraphHopperClient(WebClient.Builder builder, @Value("${gh.url}") String url) {
