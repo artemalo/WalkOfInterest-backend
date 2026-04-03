@@ -10,13 +10,18 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SubCategoryDTO {
-    private Integer id;
+public class PoiDTO {
+    private Long id;
     private String name;
     private String description;
-    private String icon;
+    private String lang;
+    private Double lat;
+    private Double lon;
+    private List<TagDTO> tags;
+    private Integer selected = 0;
+    private Double rate;
+    private Integer count;
 
-    private List<PoiDTO> pois;
     @JsonIgnore
     private Double score = 0.0;
 }

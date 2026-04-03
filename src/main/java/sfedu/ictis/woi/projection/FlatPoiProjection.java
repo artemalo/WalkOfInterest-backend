@@ -19,6 +19,8 @@ public interface FlatPoiProjection {
     String getPoiLang();
     String getPoiName();
     String getPoiDesc();
+    Double getRate();
+    Integer getCount();
 
     // Coordinate
     Double getLat();

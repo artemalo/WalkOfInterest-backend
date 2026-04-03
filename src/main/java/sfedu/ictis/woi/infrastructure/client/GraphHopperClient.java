@@ -8,6 +8,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 import sfedu.ictis.woi.exception.ExternalServiceException;
 import sfedu.ictis.woi.model.RouteResponse;
+import sfedu.ictis.woi.model.dto.PoiDTO;
 import sfedu.ictis.woi.model.dto.PointDTO;
 import tools.jackson.databind.JsonNode;
 
@@ -16,8 +17,10 @@ import java.util.List;
 
 @Component
 public class GraphHopperClient implements GraphHopperRequest {
-    private static final String SERVICE_NAME = "GraphHopper";
     private final WebClient webClient;
+
+    private static final int MS_TO_MIN = 60000;
+    private static final String SERVICE_NAME = "GraphHopper";
 
     public GraphHopperClient(WebClient.Builder builder, @Value("${gh.url}") String url) {
         this.webClient = builder.baseUrl(url).build();
@@ -72,7 +75,36 @@ public class GraphHopperClient implements GraphHopperRequest {
             points.add(new PointDTO(lat, lon));
         }
 
-        return new RouteResponse(timeMs / 60000, distance, points);
+        return new RouteResponse(timeMs / MS_TO_MIN, distance, points);
+    }
+
+    public long calculateRouteTime(List<PoiDTO> pois) {
+        JsonNode response = handleErrors(
+                webClient.get()
+                        .uri(uriBuilder -> {
+                            var uri = uriBuilder.path("/route");
+
+                            for (PoiDTO poi : pois) {
+                                uri.queryParam("point", poi.getLat() + "," + poi.getLon());
+                            }
+
+                            return uri
+                                    .queryParam("profile", "foot")
+                                    .queryParam("optimize", "true")
+                                    .queryParam("calc_points", false)
+                                    .build();
+                        })
+                        .retrieve()
+                        .bodyToMono(JsonNode.class)
+        ).block();
+
+        if (response == null || response.path("paths").isEmpty()) {
+            throw new ExternalServiceException(SERVICE_NAME, "Failed to calculate multi-point route");
+        }
+
+        long timeMs = response.path("paths").get(0).path("time").asLong();
+
+        return timeMs / MS_TO_MIN;
     }
 
 

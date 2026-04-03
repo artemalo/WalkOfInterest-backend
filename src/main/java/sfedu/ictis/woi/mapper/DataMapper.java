@@ -1,9 +1,6 @@
 package sfedu.ictis.woi.mapper;
 
-import sfedu.ictis.woi.model.dto.CategoryDTO;
-import sfedu.ictis.woi.model.dto.MarkerDTO;
-import sfedu.ictis.woi.model.dto.SubCategoryDTO;
-import sfedu.ictis.woi.model.dto.SubTagDTO;
+import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.projection.FlatPoiProjection;
 
 import java.util.*;
@@ -12,7 +9,6 @@ import java.util.stream.Collectors;
 public class DataMapper {
 
     public static List<CategoryDTO> mapToHierarchy(List<FlatPoiProjection> flatPois) {
-        // все строки по poiId, чтобы собрать все его подкатегории
         Map<Long, List<FlatPoiProjection>> poiGroups = flatPois.stream()
                 .collect(Collectors.groupingBy(
                         FlatPoiProjection::getPoiId,
@@ -20,26 +16,24 @@ public class DataMapper {
                         Collectors.toList()
                 ));
 
-        // по весу для иерархии + список всех тегов
-        record RichPoi(FlatPoiProjection winner, List<SubTagDTO> allTags) {}
+        record RichPoi(FlatPoiProjection winner, List<TagDTO> allTags) {}
 
         List<RichPoi> richPois = poiGroups.values().stream()
                 .map(list -> {
-                    // макс вес
                     FlatPoiProjection winner = list.stream()
                             .max(Comparator.comparing(FlatPoiProjection::getWeight))
                             .orElseThrow();
 
-                    // POI в список тегов
-                    List<SubTagDTO> tags = list.stream()
-                            .map(p -> new SubTagDTO(p.getSubId(), p.getWeight()))
-                            .distinct() // -дубли
+                    List<TagDTO> tags = list.stream()
+                            .map(p -> new TagDTO(p.getSubId(), p.getWeight()))
+                            .distinct()
                             .toList();
 
                     return new RichPoi(winner, tags);
                 })
                 .toList();
 
+        // 3. Собираем иерархию: Category -> SubCategory -> Poi
         return richPois.stream()
                 .collect(Collectors.groupingBy(
                         rp -> new CategoryKey(
@@ -63,28 +57,56 @@ public class DataMapper {
                 .entrySet().stream()
                 .map(catEntry -> {
                     var catKey = catEntry.getKey();
+
+                    // Создаем список SubCategoryDTO
                     List<SubCategoryDTO> subDTOs = catEntry.getValue().entrySet().stream()
                             .map(subEntry -> {
                                 var subKey = subEntry.getKey();
-                                List<MarkerDTO> markers = subEntry.getValue().stream()
-                                        .map(rp -> new MarkerDTO(
-                                                rp.winner().getPoiId(),
-                                                rp.winner().getPoiName(),
-                                                rp.winner().getPoiDesc(),
-                                                rp.winner().getPoiLang(),
-                                                rp.winner().getLat(),
-                                                rp.winner().getLon(),
-                                                rp.allTags()
-                                        ))
-                                        .toList();
 
-                                return new SubCategoryDTO(subKey.id(), subKey.name(), subKey.description(), subKey.icon(), markers);
+                                // Создаем список PoiDTO (бывшие MarkerDTO)
+                                List<PoiDTO> pois = subEntry.getValue().stream()
+                                        .map(rp -> {
+                                            PoiDTO poi = new PoiDTO();
+                                            poi.setId(rp.winner().getPoiId());
+                                            poi.setName(rp.winner().getPoiName());
+                                            poi.setDescription(rp.winner().getPoiDesc());
+                                            poi.setLang(rp.winner().getPoiLang());
+                                            poi.setLat(rp.winner().getLat());
+                                            poi.setLon(rp.winner().getLon());
+                                            poi.setTags(rp.allTags());
+
+                                            poi.setRate(rp.winner().getRate());
+                                            poi.setCount(rp.winner().getCount());
+
+                                            poi.setSelected(0);
+                                            poi.setScore(0.0);
+                                            return poi;
+                                        })
+                                        .collect(Collectors.toList());
+
+                                SubCategoryDTO sub = new SubCategoryDTO();
+                                sub.setId(subKey.id());
+                                sub.setName(subKey.name());
+                                sub.setDescription(subKey.description());
+                                sub.setIcon(subKey.icon());
+                                sub.setPois(pois);
+                                sub.setScore(0.0);
+                                return sub;
                             })
-                            .toList();
+                            .collect(Collectors.toList());
 
-                    return new CategoryDTO(catKey.id(), catKey.name(), catKey.description(), catKey.icon(), subDTOs);
+                    // Создаем CategoryDTO
+                    CategoryDTO cat = new CategoryDTO();
+                    cat.setId(catKey.id());
+                    cat.setName(catKey.name());
+                    cat.setDescription(catKey.description());
+                    cat.setIcon(catKey.icon());
+                    cat.setSubcategories(subDTOs);
+                    cat.setSelected(0);
+                    cat.setTime(0);
+                    return cat;
                 })
-                .toList();
+                .collect(Collectors.toList());
     }
 
     private record CategoryKey(Integer id, String name, String description, String icon) {}
