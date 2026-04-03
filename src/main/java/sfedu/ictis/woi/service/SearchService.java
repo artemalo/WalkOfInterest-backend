@@ -41,6 +41,7 @@
                     isochroneWkt
             );
 
+            log.info("SearchService", flatPois.size());
             List<CategoryDTO> structuredData = DataMapper.mapToHierarchy(flatPois);
 
             return new SearchResponse(request.getRequestId(), structuredData);
