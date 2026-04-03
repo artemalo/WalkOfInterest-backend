@@ -72,7 +72,7 @@ public class GraphHopperClient implements GraphHopperRequest {
             points.add(new PointDTO(lat, lon));
         }
 
-        return new RouteResponse(timeMs / 1000, distance, points);
+        return new RouteResponse(timeMs / 60000, distance, points);
     }
 
 
