@@ -41,7 +41,8 @@
                     isochroneWkt
             );
 
-            log.info("SearchService", flatPois.size());
+            log.info("SearchService: point={},{}", midLat, midLon);
+            log.info("SearchService: flatPois = {}, maxTime = {}", flatPois.size(), request.getMaxTime());
             List<CategoryDTO> structuredData = DataMapper.mapToHierarchy(flatPois);
 
             return new SearchResponse(request.getRequestId(), structuredData);
