@@ -37,11 +37,8 @@ public class PoisController {
 
     @PostMapping("/search")
     public ResponseEntity<SearchResponse> search(@RequestBody SearchRequest request) {
-        // 1. Получаем все возможные точки из БД (как ты делал раньше)
         SearchResponse response = searchService.findAllPois(request);
 
-        // 2. Оптимизируем (делаем выбор за пользователя)
-        // Передаем лимит времени T из запроса
         optimizationService.optimize(response, request.getMaxTime());
 
         return ResponseEntity.ok(response);

@@ -60,18 +60,38 @@ public class OptimizationService {
     }
 
     private void fitToTimeLimit(SearchResponse response, List<PoiDTO> selectedPois, int maxT) {
-        while (!selectedPois.isEmpty()) {
-            // N+1 !!!!!!!!!!!!!!!!!!!!!!!!!
-            long totalTime = ghClient.calculateRouteTime(selectedPois);
+        if (selectedPois.isEmpty()) return;
+        selectedPois.sort(Comparator.comparing(PoiDTO::getScore).reversed());
 
-            if (totalTime <= maxT) {
-                break;
+        int left = 1;
+        int right = selectedPois.size();
+        int best = 0;
+
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+
+            List<PoiDTO> subset = selectedPois.subList(0, mid);
+            long time = ghClient.calculateRouteTime(subset); // Могут ли индексы поплыть?
+
+            if (time <= maxT) {
+                best = mid;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
             }
-
-            selectedPois.sort(Comparator.comparing(PoiDTO::getScore));
-            PoiDTO worst = selectedPois.removeFirst();
-            worst.setSelected(0);
         }
+
+        for (int i = 0; i < selectedPois.size(); i++) {
+            if (i < best) {
+                selectedPois.get(i).setSelected(1);
+            } else {
+                selectedPois.get(i).setSelected(0);
+            }
+        }
+
+//        if (selectedPois.size() > best) {
+//            selectedPois.subList(best, selectedPois.size()).clear();
+//        }
 
         finalizeCategories(response, selectedPois);
     }
