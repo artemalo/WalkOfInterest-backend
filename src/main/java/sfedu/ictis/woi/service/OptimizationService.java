@@ -105,7 +105,7 @@ public class OptimizationService {
             cat.setSelected(hasActive ? 1 : 0);
 
             if (hasActive) {
-                cat.setTime(22); // заглушка
+                cat.setTime(22); // TODO заглушка
             }
         }
     }

@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler extends RuntimeException {
+public class GlobalExceptionHandler {
   @ExceptionHandler(DataAccessException.class)
   public ResponseEntity<ErrorResponseDto> handleDb() {
     return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
