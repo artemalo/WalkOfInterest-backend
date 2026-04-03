@@ -10,5 +10,5 @@ import lombok.NoArgsConstructor;
 public class SearchRequestDTO {
     private PointDTO p1;
     private PointDTO p2;
-    private int maxTime;
+    private Integer maxTime;
 }

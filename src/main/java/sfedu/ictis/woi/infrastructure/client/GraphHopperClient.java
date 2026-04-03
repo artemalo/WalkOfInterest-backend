@@ -8,7 +8,6 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 import sfedu.ictis.woi.exception.ExternalServiceException;
 import sfedu.ictis.woi.model.RouteResponse;
-import sfedu.ictis.woi.model.dto.PoiDTO;
 import sfedu.ictis.woi.model.dto.PointDTO;
 import tools.jackson.databind.JsonNode;
 
