@@ -6,10 +6,12 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import sfedu.ictis.woi.exception.BusinessException;
 import sfedu.ictis.woi.infrastructure.client.GraphHopperClient;
 import sfedu.ictis.woi.infrastructure.client.GraphHopperCustom;
 import sfedu.ictis.woi.mapper.DataMapper;
 import sfedu.ictis.woi.model.PoisResponse;
+import sfedu.ictis.woi.model.RouteResponse;
 import sfedu.ictis.woi.model.RouteSearchRequest;
 import sfedu.ictis.woi.model.dto.CategoryDTO;
 import sfedu.ictis.woi.model.dto.PointDTO;
@@ -22,20 +24,31 @@ import java.util.List;
 public class PoiService {
     private static final Logger log = LoggerFactory.getLogger(PoiService.class);
 
-    @Autowired
-    private GraphHopperCustom fallbackClient;
-
+    private final GraphHopperCustom fallbackClient;
     private final GraphHopperClient ghClient;
     private final PoiRepository poiRepository;
 
-    public PoiService(GraphHopperClient ghClient, PoiRepository poiRepository) {
+    public PoiService(GraphHopperCustom fallbackClient, GraphHopperClient ghClient, PoiRepository poiRepository) {
+        this.fallbackClient = fallbackClient;
         this.ghClient = ghClient;
         this.poiRepository = poiRepository;
     }
 
-    public long calculateMinTime(PointDTO p1, PointDTO p2) {
-        long timeSeconds = ghClient.getMinRouteTime(p1, p2);
-        return timeSeconds / 60;
+    public RouteResponse getRoute(PointDTO from, PointDTO to) {
+        try {
+            RouteResponse route = ghClient.getRoute(from, to);
+
+            if (route.minTime() <= 0) {
+                throw new IllegalStateException("Invalid route time");
+            }
+
+            return route;
+
+        } catch (Exception e) {
+            log.warn("GraphHopper failed, fallback triggered", e);
+//            return fallbackClient.getRoute(from, to);
+            throw new BusinessException("GraphHopper failed, fallback triggered");
+        }
     }
 
     public PoisResponse getStructuredPois(RouteSearchRequest request) {

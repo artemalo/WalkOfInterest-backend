@@ -7,8 +7,12 @@ import org.springframework.web.reactive.function.client.WebClientRequestExceptio
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 import sfedu.ictis.woi.exception.ExternalServiceException;
+import sfedu.ictis.woi.model.RouteResponse;
 import sfedu.ictis.woi.model.dto.PointDTO;
 import tools.jackson.databind.JsonNode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class GraphHopperClient implements GraphHopperRequest {
@@ -37,13 +41,13 @@ public class GraphHopperClient implements GraphHopperRequest {
         return parseToWkt(response);
     }
 
-    public long getMinRouteTime(PointDTO p1, PointDTO p2) {
+    public RouteResponse getRoute(PointDTO p1, PointDTO p2) {
         JsonNode response = handleErrors(webClient.get()
                 .uri(uri -> uri.path("/route")
                         .queryParam("point", p1.lat() + "," + p1.lon())
                         .queryParam("point", p2.lat() + "," + p2.lon())
                         .queryParam("profile", "foot")
-                        .queryParam("calc_points", false) // только время
+                        .queryParam("calc_points", true)
                         .queryParam("points_encoded", false)
                         .build())
                 .retrieve()
@@ -54,9 +58,21 @@ public class GraphHopperClient implements GraphHopperRequest {
             throw new ExternalServiceException(SERVICE_NAME, "Could not calculate route between points");
         }
 
-        long timeMs = response.path("paths").get(0).path("time").asLong();
+        JsonNode path = response.path("paths").get(0);
 
-        return timeMs / 1000;
+        long timeMs = path.path("time").asLong();
+        double distance = path.path("distance").asDouble();
+
+        List<PointDTO> points = new ArrayList<>();
+        JsonNode coords = path.path("points").path("coordinates");
+
+        for (JsonNode coord : coords) {
+            double lon = coord.get(0).asDouble();
+            double lat = coord.get(1).asDouble();
+            points.add(new PointDTO(lat, lon));
+        }
+
+        return new RouteResponse(timeMs / 1000, distance, points);
     }
 
 

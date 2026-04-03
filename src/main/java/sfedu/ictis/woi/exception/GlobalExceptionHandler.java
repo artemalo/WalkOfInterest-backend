@@ -14,8 +14,15 @@ public class GlobalExceptionHandler extends RuntimeException {
             .body(new ErrorResponseDto("DB_DOWN", "База временно недоступна"));
   }
   @ExceptionHandler(ExternalServiceException.class)
-  public ResponseEntity<ErrorResponseDto> handleServiceException() {
+  public ResponseEntity<ErrorResponseDto> handleMicroserviceException() {
     return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
             .body(new ErrorResponseDto("SERVICE_DOWN", "Сервис временно недоступен"));
+  }
+
+
+  @ExceptionHandler(BusinessException.class)
+  public ResponseEntity<ErrorResponseDto> handleServiceException() {
+    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+            .body(new ErrorResponseDto("BUS_ERR", "Сервис не важно себя почувствовал"));
   }
 }

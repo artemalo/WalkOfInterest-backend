@@ -1,6 +1,7 @@
 package sfedu.ictis.woi.infrastructure.client;
 
 import org.springframework.stereotype.Component;
+import sfedu.ictis.woi.model.RouteResponse;
 import sfedu.ictis.woi.model.dto.PointDTO;
 
 import java.util.ArrayList;
@@ -42,8 +43,8 @@ public class GraphHopperCustom implements GraphHopperRequest {
     }
 
     @Override
-    public long getMinRouteTime(PointDTO p1, PointDTO p2) {
-        return -1;
+    public RouteResponse getRoute(PointDTO p1, PointDTO p2) {
+        return new RouteResponse(-1, -1, new ArrayList<>());
     }
 
     private String toWkt(List<double[]> coords) {

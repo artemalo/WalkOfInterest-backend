@@ -2,8 +2,8 @@ package sfedu.ictis.woi.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sfedu.ictis.woi.model.MinTimeResponse;
 import sfedu.ictis.woi.model.PoisResponse;
+import sfedu.ictis.woi.model.RouteResponse;
 import sfedu.ictis.woi.model.RouteSearchRequest;
 import sfedu.ictis.woi.model.dto.PointDTO;
 import sfedu.ictis.woi.service.PoiService;
@@ -17,8 +17,8 @@ public class PoisController {
         this.poiService = orchestratorService;
     }
 
-    @GetMapping("/min-time")
-		public ResponseEntity<MinTimeResponse> getMinTime(
+    @GetMapping("/route")
+		public ResponseEntity<RouteResponse> getMinTime(
 		        @RequestParam double lat1,
 		        @RequestParam double lon1,
 		        @RequestParam double lat2,
@@ -26,7 +26,7 @@ public class PoisController {
 
 		    PointDTO p1 = new PointDTO(lat1, lon1);
 		    PointDTO p2 = new PointDTO(lat2, lon2);
-        return ResponseEntity.ok(new MinTimeResponse(poiService.calculateMinTime(p1, p2)));
+        return ResponseEntity.ok(poiService.getRoute(p1, p2));
     }
 
     @PostMapping("/search")
