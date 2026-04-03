@@ -2,6 +2,7 @@ package sfedu.ictis.woi.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import sfedu.ictis.woi.mapper.SearchRequestMapper;
 import sfedu.ictis.woi.model.RouteResponse;
 import sfedu.ictis.woi.model.SearchRequest;
 import sfedu.ictis.woi.model.SearchResponse;
@@ -39,7 +40,7 @@ public class PoisController {
     public ResponseEntity<SearchResponse> search(@RequestBody SearchRequest request) {
         SearchResponse response = searchService.findAllPois(request);
 
-        optimizationService.optimize(response, request.getMaxTime());
+        optimizationService.optimize(response, SearchRequestMapper.toDTO(request));
 
         return ResponseEntity.ok(response);
     }

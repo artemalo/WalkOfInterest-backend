@@ -17,15 +17,16 @@ import java.util.List;
 
 @Component
 public class GraphHopperClient implements GraphHopperRequest {
-    private final WebClient webClient;
-
     private static final int MS_TO_MIN = 60000;
     private static final String SERVICE_NAME = "GraphHopper";
+
+    private final WebClient webClient;
 
     public GraphHopperClient(WebClient.Builder builder, @Value("${gh.url}") String url) {
         this.webClient = builder.baseUrl(url).build();
     }
 
+    @Override
     public String fetchIsochrone(double lat, double lon, int seconds) {
         JsonNode response = handleErrors(webClient.get()
                 .uri(uri -> uri.path("/isochrone")
@@ -44,6 +45,7 @@ public class GraphHopperClient implements GraphHopperRequest {
         return parseToWkt(response);
     }
 
+    @Override
     public RouteResponse getRoute(PointDTO p1, PointDTO p2) {
         JsonNode response = handleErrors(webClient.get()
                 .uri(uri -> uri.path("/route")
@@ -78,14 +80,15 @@ public class GraphHopperClient implements GraphHopperRequest {
         return new RouteResponse(timeMs / MS_TO_MIN, distance, points);
     }
 
-    public long calculateRouteTime(List<PoiDTO> pois) {
+    @Override
+    public long calculateRouteTime(List<PointDTO> pois) {
         JsonNode response = handleErrors(
                 webClient.get()
                         .uri(uriBuilder -> {
                             var uri = uriBuilder.path("/route");
 
-                            for (PoiDTO poi : pois) {
-                                uri.queryParam("point", poi.getLat() + "," + poi.getLon());
+                            for (PointDTO poi : pois) {
+                                uri.queryParam("point", poi.lat() + "," + poi.lon());
                             }
 
                             return uri

@@ -47,6 +47,11 @@ public class GraphHopperCustom implements GraphHopperRequest {
         return new RouteResponse(-1, -1, new ArrayList<>());
     }
 
+    @Override
+    public long calculateRouteTime(List<PointDTO> pois) {
+        return -1;
+    }
+
     private String toWkt(List<double[]> coords) {
         StringBuilder wkt = new StringBuilder("POLYGON((");
 

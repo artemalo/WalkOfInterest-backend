@@ -31,8 +31,7 @@ public class ScoreCalculator {
         context.setVariable("rate", rate);
         context.setVariable("countRate", count);
         context.setVariable("distWeight", distanceWeight);
-        // Допустим, userPoi - это точки, которые пользователь уже добавил сам.
-        // Мы даем бонус тем, что он еще НЕ видел (is_not_userPoi)
+        // (is_not_userPoi)
         context.setVariable("userPoiBonus", 1.0);
 
         Double result = parser.parseExpression(config.getPoiFormula())
