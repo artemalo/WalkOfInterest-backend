@@ -12,7 +12,7 @@ import sfedu.ictis.woi.service.PoiService;
 import sfedu.ictis.woi.service.SearchService;
 
 @RestController
-@RequestMapping("/")
+@RequestMapping("/poi")
 public class PoisController {
     private final PoiService poiService;
     private final SearchService searchService;
@@ -25,14 +25,7 @@ public class PoisController {
     }
 
     @GetMapping("/route")
-		public ResponseEntity<RouteResponse> getRoute(
-		        @RequestParam double lat1,
-		        @RequestParam double lon1,
-		        @RequestParam double lat2,
-		        @RequestParam double lon2) {
-
-		    PointDTO p1 = new PointDTO(lat1, lon1);
-		    PointDTO p2 = new PointDTO(lat2, lon2);
+    public ResponseEntity<RouteResponse> getRoute(@RequestBody PointDTO p1, @RequestBody PointDTO p2) {
         return ResponseEntity.ok(poiService.getRoute(p1, p2));
     }
 
