@@ -11,7 +11,7 @@ import sfedu.ictis.woi.model.dto.PointDTO;
 public class SearchRequest {
     private PointDTO p1;
     private PointDTO p2;
-    private int maxTime;
+    private Integer maxTime;
     private String lang;
     private String requestId;
 }
