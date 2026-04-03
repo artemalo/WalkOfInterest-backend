@@ -19,15 +19,15 @@ public class WebClientConfig {
 
         HttpClient httpClient = HttpClient.create()
                 // на установку соединения
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 3000)
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 60000)
 
                 // ответа от сервера
-                .responseTimeout(Duration.ofSeconds(5))
+                .responseTimeout(Duration.ofSeconds(60))
 
                 // на чтение/запись
                 .doOnConnected(conn -> conn
-                        .addHandlerLast(new ReadTimeoutHandler(5))
-                        .addHandlerLast(new WriteTimeoutHandler(5)));
+                        .addHandlerLast(new ReadTimeoutHandler(60))
+                        .addHandlerLast(new WriteTimeoutHandler(60)));
 
         return WebClient.builder()
                 .clientConnector(new ReactorClientHttpConnector(httpClient));
