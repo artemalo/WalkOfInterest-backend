@@ -24,7 +24,7 @@ public class PoisController {
         this.optimizationService = optimizationService;
     }
 
-    @GetMapping("/route")
+    @PostMapping("/route")
     public ResponseEntity<RouteResponse> getRoute(@RequestBody RouteRequest request) {
         return ResponseEntity.ok(poiService.getRoute(request.getP1(), request.getP2()));
     }
