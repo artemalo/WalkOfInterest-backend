@@ -18,6 +18,8 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
             si.subcategory_description as subDescription, si.subcategory_icon as subIcon,
             p.id as poiId,
             pl.langue as poiLang, pl.poi_name as poiName, pl.poi_description as poiDesc,
+            COALESCE(pr.avg_rate, 0.0) as rate,
+            COALESCE(pr.count_rate, 0) as count,
             ST_X(ST_Centroid(p.geom)) as lon,
             ST_Y(ST_Centroid(p.geom)) as lat
         FROM pois p
@@ -25,6 +27,7 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
         JOIN subcategories s ON pst.subcategory_id = s.id
         JOIN categories c ON s.category_id = c.id
         LEFT JOIN subcategories_info si ON s.id = si.subcategory_id
+        LEFT JOIN poi_ratings pr ON p.id = pr.poi_id
         LEFT JOIN LATERAL (
             SELECT
             	langue,

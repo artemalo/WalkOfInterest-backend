@@ -16,8 +16,6 @@ public class DataMapper {
                         Collectors.toList()
                 ));
 
-        record RichPoi(FlatPoiProjection winner, List<TagDTO> allTags) {}
-
         List<RichPoi> richPois = poiGroups.values().stream()
                 .map(list -> {
                     FlatPoiProjection winner = list.stream()
@@ -111,4 +109,6 @@ public class DataMapper {
 
     private record CategoryKey(Integer id, String name, String description, String icon) {}
     private record SubCategoryKey(Integer id, String name, String description, String icon) {}
+    private record RichPoi(FlatPoiProjection winner, List<TagDTO> allTags) {}
+
 }
