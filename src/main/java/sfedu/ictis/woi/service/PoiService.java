@@ -23,7 +23,7 @@ public class PoiService {
         try {
             RouteResponse route = ghClient.getRoute(from, to);
 
-            if (route.minTime() <= 0) {
+            if (route.minTime() < 0) {
                 throw new IllegalStateException("Invalid route time");
             }
 
