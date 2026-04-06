@@ -4,7 +4,10 @@ import org.locationtech.jts.geom.Geometry;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "pois")
@@ -27,13 +30,22 @@ public class PoiEntity {
     @Column(name = "osm_uid")
     private Long osmUid;
 
-    @Column(name = "user_id")
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private UserEntity user;
 
     @Column(name = "last_update", nullable = false, insertable = false, updatable = false)
     private LocalDateTime lastUpdate;
 
+    @ManyToMany
+    @JoinTable(
+            name = "poi_system_tags",
+            joinColumns = @JoinColumn(name = "poi_id"),
+            inverseJoinColumns = @JoinColumn(name = "subcategory_id")
+    )
+    private Set<SubcategoryEntity> subcategories = new HashSet<>();
+
     public boolean isUserGenerated() {
-        return this.userId != null;
+        return this.user != null;
     }
 }
