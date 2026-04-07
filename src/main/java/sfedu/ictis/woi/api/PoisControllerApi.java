@@ -11,7 +11,7 @@ import sfedu.ictis.woi.model.RouteResponse;
 import sfedu.ictis.woi.model.SearchRequest;
 import sfedu.ictis.woi.model.SearchResponse;
 
-@Tag(name = "POI Controller", description = "Управление точками интереса и маршрутами")
+@Tag(name = "Generate Controller", description = "Поиск точек интереса и маршруты")
 @ApiResponses({
         @ApiResponse(responseCode = "503", description = "Проблемы с сервисом")
 })

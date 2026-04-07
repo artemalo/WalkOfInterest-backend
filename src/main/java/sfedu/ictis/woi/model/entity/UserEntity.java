@@ -26,6 +26,9 @@ public class UserEntity {
     @Column(name = "user_name_last")
     private String lastName;
 
+    @Enumerated(EnumType.STRING)
+    private UserRole role;
+
     @Column(name = "created_at", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 }
