@@ -3,6 +3,7 @@ package sfedu.ictis.woi.service;
 import org.springframework.stereotype.Service;
 import sfedu.ictis.woi.config.OptimizerConfig;
 import sfedu.ictis.woi.infrastructure.client.GraphHopperClient;
+import sfedu.ictis.woi.model.RouteResponse;
 import sfedu.ictis.woi.model.SearchResponse;
 import sfedu.ictis.woi.model.dto.*;
 
@@ -29,7 +30,12 @@ public class OptimizationService {
     }
 
     public void optimize(SearchResponse response, SearchRequestDTO request) {
-        calculateAndSortScores(response);
+        // 1. Получаем базовый "скелетный" маршрут от А до Б
+        RouteResponse baseRoute = ghClient.getRoute(request.getP1(), request.getP2());
+
+        // 2. Считаем скоры, передавая маршрут для расчета бонуса близости
+        calculateAndSortScores(response, baseRoute.route());
+
         markInitialTopPois(response);
 
         List<PoiDTO> candidates = getSelectedPois(response);
@@ -71,20 +77,32 @@ public class OptimizationService {
     /**
      * Рассчитывает баллы для каждой точки и сортирует структуру "сверху вниз".
      */
-    private void calculateAndSortScores(SearchResponse response) {
+    private void calculateAndSortScores(SearchResponse response, List<PointDTO> baseRoutePoints) {
         for (CategoryDTO cat : response.getCategories()) {
             for (SubCategoryDTO sub : cat.getSubcategories()) {
                 for (PoiDTO poi : sub.getPois()) {
-                    // Рассчитываем индивидуальный скор точки
-                    poi.setScore(scoreCalculator.calculatePoiScore(poi, 1.0));
-                }
-                // Сортируем точки в подкатегории: лучшие в начале
-                sub.getPois().sort(Comparator.comparing(PoiDTO::getScore).reversed());
 
-                // Считаем скор всей подкатегории (на основе её точек)
+                    // Узнаем, как далеко точка от скелета маршрута
+                    double distToRoute = minDistanceToRoute(poi, baseRoutePoints);
+
+                    // Превращаем расстояние в бонус.
+                    // Если точка ближе 150 метров — даем огромный вес.
+                    // Если дальше — даем небольшой бонус, зависящий от расстояния (чем ближе, тем лучше).
+                    double proximityBonus;
+                    if (distToRoute <= 150.0) {
+                        proximityBonus = 1000.0; // 100% гарантия, что она выживет при сортировке
+                    } else {
+                        // Например, 1000 / дистанцию. Если дистанция 500м, бонус будет 2.0
+                        proximityBonus = Math.max(0, 1000.0 / distToRoute);
+                    }
+
+                    // Передаем этот бонус как distanceWeight в твой SpEL парсер
+                    poi.setScore(scoreCalculator.calculatePoiScore(poi, proximityBonus));
+                }
+
+                sub.getPois().sort(Comparator.comparing(PoiDTO::getScore).reversed());
                 sub.setScore(scoreCalculator.calculateSubcategoryScore(sub));
             }
-            // Сортируем подкатегории внутри категории
             cat.getSubcategories().sort(Comparator.comparing(SubCategoryDTO::getScore).reversed());
         }
     }
@@ -161,14 +179,31 @@ public class OptimizationService {
         return matrix;
     }
 
-    private double haversine(PoiDTO p1, PoiDTO p2) {
-        double dLat = Math.toRadians(p2.getLat() - p1.getLat());
-        double dLon = Math.toRadians(p2.getLon() - p1.getLon());
+    // Перегружаем haversine для удобства
+    private double haversine(double lat1, double lon1, double lat2, double lon2) {
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(Math.toRadians(p1.getLat())) * Math.cos(Math.toRadians(p2.getLat())) *
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
                         Math.sin(dLon / 2) * Math.sin(dLon / 2);
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
+    }
+
+    private double haversine(PoiDTO p1, PoiDTO p2) {
+        return haversine(p1.getLat(), p1.getLon(), p2.getLat(), p2.getLon());
+    }
+
+    // Ищем кратчайшее расстояние от POI до базового маршрута (метры)
+    private double minDistanceToRoute(PoiDTO poi, List<PointDTO> routePoints) {
+        double minDistance = Double.MAX_VALUE;
+        for (PointDTO pt : routePoints) {
+            double dist = haversine(poi.getLat(), poi.getLon(), pt.lat(), pt.lon());
+            if (dist < minDistance) {
+                minDistance = dist;
+            }
+        }
+        return minDistance;
     }
 
     private double calculateGreedyRouteTime(double[][] matrix, int size) {
