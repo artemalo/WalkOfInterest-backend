@@ -20,7 +20,7 @@ public class JwtService {
     @Value("${jwt.secret.key}")
     private String SECRET_KEY;
     @Value("${jwt.expiration}")
-    private String JWT_EXPIRATION;
+    private long JWT_EXPIRATION;
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);

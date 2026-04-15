@@ -2,6 +2,7 @@ package sfedu.ictis.woi.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -58,9 +59,13 @@ public class AuthService {
         }
 
         // Spring Security проверяет пароль и логин
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.username(), request.password())
-        );
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.username(), request.password())
+            );
+        } catch (BadCredentialsException e) {
+            throw new InvalidCredentialsException();
+        }
 
         var userDetails = applicationConfig.userDetailsService().loadUserByUsername(request.username());
         String jwtToken = jwtService.generateToken(userDetails);
