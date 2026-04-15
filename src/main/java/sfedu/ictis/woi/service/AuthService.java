@@ -6,7 +6,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import sfedu.ictis.woi.config.ApplicationConfig;
-import sfedu.ictis.woi.exception.AuthException;
+import sfedu.ictis.woi.exception.BaseException;
+import sfedu.ictis.woi.exception.UserAlreadyExistsException;
+import sfedu.ictis.woi.exception.InvalidCredentialsException;
 import sfedu.ictis.woi.model.AuthResponse;
 import sfedu.ictis.woi.model.LoginRequest;
 import sfedu.ictis.woi.model.RegisterRequest;
@@ -26,7 +28,11 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.username())) {
-            throw new AuthException("Пользователь уже существует");
+            throw new UserAlreadyExistsException(request.username());
+        }
+
+        if (request.password().length() < 8) {
+            throw new BaseException("Пароль слишком короткий", "WEAK_PASSWORD");
         }
 
         UserEntity user = new UserEntity();
@@ -45,6 +51,12 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        var user = userRepository.findByUsername(request.username())
+                .orElseThrow(InvalidCredentialsException::new);
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+            throw new InvalidCredentialsException();
+        }
+
         // Spring Security проверяет пароль и логин
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.username(), request.password())

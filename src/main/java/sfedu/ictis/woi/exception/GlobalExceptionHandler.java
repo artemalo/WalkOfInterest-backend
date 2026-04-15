@@ -1,28 +1,39 @@
 package sfedu.ictis.woi.exception;
 
-import org.springframework.dao.DataAccessException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
-  @ExceptionHandler(DataAccessException.class)
-  public ResponseEntity<ErrorResponseDto> handleDb() {
-    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-            .body(new ErrorResponseDto("DB_DOWN", "База временно недоступна"));
-  }
-  @ExceptionHandler(ExternalServiceException.class)
-  public ResponseEntity<ErrorResponseDto> handleMicroserviceException() {
-    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-            .body(new ErrorResponseDto("SERVICE_DOWN", "Сервис временно недоступен"));
+  // 404 Not Found
+  @ExceptionHandler(ResourceNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
   }
 
+  // 401 Unauthorized
+  @ExceptionHandler(InvalidCredentialsException.class)
+  public ResponseEntity<ErrorResponse> handleUnauthorized(InvalidCredentialsException ex) {
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
+  }
 
-  @ExceptionHandler(BusinessException.class)
-  public ResponseEntity<ErrorResponseDto> handleServiceException() {
-    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-            .body(new ErrorResponseDto("BUS_ERR", "Сервис не важно себя почувствовал"));
+  // 403 Forbidden
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ErrorResponse> handleForbidden(AccessDeniedException ex) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
+  }
+
+  // Все остальные наследники BaseException (400 Bad Request)
+  @ExceptionHandler(BaseException.class)
+  public ResponseEntity<ErrorResponse> handleBaseException(BaseException ex) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
   }
 }
