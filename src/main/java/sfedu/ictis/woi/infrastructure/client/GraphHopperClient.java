@@ -1,5 +1,6 @@
 package sfedu.ictis.woi.infrastructure.client;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -14,6 +15,7 @@ import tools.jackson.databind.JsonNode;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Component
 public class GraphHopperClient implements GraphHopperRequest {
     private static final int MS_TO_MIN = 60000;
@@ -152,9 +154,13 @@ public class GraphHopperClient implements GraphHopperRequest {
     }
 
     private <T> Mono<T> handleErrors(Mono<T> mono) {
-        return mono.onErrorMap(WebClientRequestException.class,
-                        ex -> new ExternalServiceException(SERVICE_NAME, "Недоступен", ex))
-                .onErrorMap(WebClientResponseException.class,
-                        ex -> new ExternalServiceException(SERVICE_NAME, "Ошибка: " + ex.getStatusCode(), ex));
+        return mono.onErrorMap(WebClientRequestException.class, ex -> {
+            log.error(SERVICE_NAME + " Недоступен", ex);
+            throw new ExternalServiceException(SERVICE_NAME, "Недоступен");
+        })
+                .onErrorMap(WebClientResponseException.class, ex -> {
+                    log.error(SERVICE_NAME + " Недоступен {}", ex.getStatusCode(), ex);
+                            throw new ExternalServiceException(SERVICE_NAME, "Ошибка");
+                });
     }
 }

@@ -1,5 +1,6 @@
 package sfedu.ictis.woi.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.api.GenerateControllerApi;
@@ -33,7 +34,7 @@ public class GenerateController implements GenerateControllerApi {
 
     @Override
     @PostMapping("/search")
-    public ResponseEntity<SearchResponse> search(@RequestBody SearchRequest request) {
+    public ResponseEntity<SearchResponse> search(@Valid @RequestBody SearchRequest request) {
         SearchResponse response = searchService.findAllPois(request);
 
         optimizationService.optimize(response, SearchRequestMapper.toDTO(request));
