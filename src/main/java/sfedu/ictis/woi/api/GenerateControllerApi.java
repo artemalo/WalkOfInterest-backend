@@ -15,7 +15,7 @@ import sfedu.ictis.woi.model.SearchResponse;
 @ApiResponses({
         @ApiResponse(responseCode = "503", description = "Проблемы с сервисом")
 })
-public interface PoisControllerApi {
+public interface GenerateControllerApi {
     @Operation(
             summary = "Получить маршрут",
             description = "Рассчитывает оптимальный путь между двумя точками"

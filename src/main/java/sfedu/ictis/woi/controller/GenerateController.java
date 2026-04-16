@@ -2,7 +2,7 @@ package sfedu.ictis.woi.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import sfedu.ictis.woi.api.PoisControllerApi;
+import sfedu.ictis.woi.api.GenerateControllerApi;
 import sfedu.ictis.woi.mapper.SearchRequestMapper;
 import sfedu.ictis.woi.model.RouteRequest;
 import sfedu.ictis.woi.model.RouteResponse;
@@ -13,13 +13,13 @@ import sfedu.ictis.woi.service.PoiService;
 import sfedu.ictis.woi.service.SearchService;
 
 @RestController
-@RequestMapping("/poi")
-public class PoisController implements PoisControllerApi {
+@RequestMapping("/poi/generate")
+public class GenerateController implements GenerateControllerApi {
     private final PoiService poiService;
     private final SearchService searchService;
     private final OptimizationService optimizationService;
 
-    public PoisController(PoiService orchestratorService, SearchService searchService, OptimizationService optimizationService) {
+    public GenerateController(PoiService orchestratorService, SearchService searchService, OptimizationService optimizationService) {
         this.poiService = orchestratorService;
         this.searchService = searchService;
         this.optimizationService = optimizationService;
