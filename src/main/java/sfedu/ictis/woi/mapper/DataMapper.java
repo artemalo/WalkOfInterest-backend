@@ -56,6 +56,10 @@ public class DataMapper {
                 .map(catEntry -> {
                     var catKey = catEntry.getKey();
 
+                    int totalPoisCount = catEntry.getValue().values().stream()
+                            .mapToInt(List::size)
+                            .sum();
+
                     // Создаем список SubCategoryDTO
                     List<SubCategoryDTO> subDTOs = catEntry.getValue().entrySet().stream()
                             .map(subEntry -> {
@@ -101,9 +105,6 @@ public class DataMapper {
                     cat.setIcon(catKey.icon());
                     cat.setSubcategories(subDTOs);
 
-                    int totalPoisCount = subDTOs.stream()
-                            .mapToInt(sub -> sub.getPois() != null ? sub.getPois().size() : 0)
-                            .sum();
                     cat.setTotalPois(totalPoisCount);
 
                     cat.setSelected(0);
