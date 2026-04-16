@@ -21,7 +21,6 @@ import java.util.Collections;
 @Configuration
 @RequiredArgsConstructor
 public class ApplicationConfig {
-
     private final UserRepository userRepository;
 
     @Bean

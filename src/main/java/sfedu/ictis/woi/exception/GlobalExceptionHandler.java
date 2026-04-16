@@ -26,9 +26,9 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler({DataAccessException.class, SQLException.class})
-  public ResponseEntity<BaseException> handleDb() {
+  public ResponseEntity<ErrorResponse> handleDb() {
     return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-            .body(new BaseException("База временно недоступна", "DB_ERROR"));
+            .body(new ErrorResponse("База временно недоступна", "DB_ERROR"));
   }
 
   // 404 Not Found
