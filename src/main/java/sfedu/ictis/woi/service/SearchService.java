@@ -30,6 +30,10 @@
         }
 
         public SearchResponse findAllPois(SearchRequest request) {
+            if (request.getMaxTime() < 0) {
+                throw new IllegalStateException("Invalid time");
+            }
+
             double midLat = (request.getP1().lat() + request.getP2().lat()) / 2;
             double midLon = (request.getP1().lon() + request.getP2().lon()) / 2;
 
