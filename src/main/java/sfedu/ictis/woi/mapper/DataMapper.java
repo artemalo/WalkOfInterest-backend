@@ -100,6 +100,12 @@ public class DataMapper {
                     cat.setDescription(catKey.description());
                     cat.setIcon(catKey.icon());
                     cat.setSubcategories(subDTOs);
+
+                    int totalPoisCount = subDTOs.stream()
+                            .mapToInt(sub -> sub.getPois() != null ? sub.getPois().size() : 0)
+                            .sum();
+                    cat.setTotalPois(totalPoisCount);
+
                     cat.setSelected(0);
                     cat.setTime(0);
                     return cat;
