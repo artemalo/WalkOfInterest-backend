@@ -70,7 +70,7 @@ public class OptimizationService {
         }
 
         for (int i = 0; i < selectedPois.size(); i++) {
-            selectedPois.get(i).setSelected(i < best ? 1 : 0);
+            selectedPois.get(i).setSelected(i < best);
         }
     }
 
@@ -119,7 +119,7 @@ public class OptimizationService {
                             .forEach(sub -> {
                                 if (!sub.getPois().isEmpty()) {
                                     // Помечаем только самую лучшую точку в каждой подкатегории
-                                    sub.getPois().getFirst().setSelected(1);
+                                    sub.getPois().getFirst().setSelected(true);
                                 }
                             });
                 });
@@ -129,7 +129,7 @@ public class OptimizationService {
         return response.getCategories().stream()
                 .flatMap(cat -> cat.getSubcategories().stream())
                 .flatMap(sub -> sub.getPois().stream())
-                .filter(poi -> poi.getSelected() == 1)
+                .filter(poi -> poi.getSelected() == true)
                 .collect(Collectors.toList());
     }
 
@@ -137,13 +137,13 @@ public class OptimizationService {
         for (CategoryDTO cat : response.getCategories()) {
             List<PointDTO> activePoints = cat.getSubcategories().stream()
                     .flatMap(sub -> sub.getPois().stream())
-                    .filter(p -> p.getSelected() == 1)
+                    .filter(p -> Boolean.TRUE.equals(p.getSelected()))
                     .map(p -> new PointDTO(p.getLat(), p.getLon()))
                     .toList();
 
-            if (!activePoints.isEmpty()) {
-                cat.setSelected(1);
+            cat.setSelected(activePoints.size());
 
+            if (!activePoints.isEmpty()) {
                 List<PointDTO> fullRoute = new ArrayList<>();
                 fullRoute.add(request.getP1());
                 fullRoute.addAll(activePoints);
@@ -156,7 +156,6 @@ public class OptimizationService {
                     cat.setTime(0);
                 }
             } else {
-                cat.setSelected(0);
                 cat.setTime(0);
             }
         }

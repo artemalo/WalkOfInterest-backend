@@ -76,7 +76,7 @@ public class DataMapper {
                                             poi.setRate(rp.winner().getRate());
                                             poi.setCount(rp.winner().getCount());
 
-                                            poi.setSelected(0);
+                                            poi.setSelected(false);
                                             poi.setScore(0.0);
                                             return poi;
                                         })

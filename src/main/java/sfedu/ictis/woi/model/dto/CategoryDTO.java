@@ -13,7 +13,10 @@ public class CategoryDTO {
     private String name;
     private String description;
     private String icon;
+
     private Integer selected = 0;
+    private Integer totalPois = 0;
+
     private Integer time = 0;
     private List<SubCategoryDTO> subcategories;
 }

@@ -18,7 +18,7 @@ public class PoiDTO {
     private Double lat;
     private Double lon;
     private List<TagDTO> tags;
-    private Integer selected = 0;
+    private Boolean selected = false;
     private Double rate;
     private Integer count;
 
