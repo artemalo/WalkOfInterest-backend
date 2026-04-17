@@ -137,7 +137,7 @@ public class OptimizationService {
         for (CategoryDTO cat : response.getCategories()) {
             List<PointDTO> activePoints = cat.getSubcategories().stream()
                     .flatMap(sub -> sub.getPois().stream())
-                    .filter(p -> Boolean.TRUE.equals(p.getSelected()))
+                    //.filter(p -> Boolean.TRUE.equals(p.getSelected()))
                     .map(p -> new PointDTO(p.getLat(), p.getLon()))
                     .toList();
 

@@ -37,7 +37,6 @@
             double midLat = (request.getP1().lat() + request.getP2().lat()) / 2;
             double midLon = (request.getP1().lon() + request.getP2().lon()) / 2;
 
-            // можно (timeLimit - minTime)
             String isochroneWkt = safeFetchIsochrone(midLat, midLon, request.getMaxTime() * 60);
 
             List<FlatPoiProjection> flatPois = poiRepository.findPoisInIsochrone(
