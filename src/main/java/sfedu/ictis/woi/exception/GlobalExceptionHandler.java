@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import javax.naming.AuthenticationException;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,6 +24,12 @@ public class GlobalExceptionHandler {
     }
 
     return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(AuthenticationException.class)
+  public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException ex) {
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(new ErrorResponse("Неверные учётные данные или токен", "UNAUTHORIZED"));
   }
 
   @ExceptionHandler({DataAccessException.class, SQLException.class})
