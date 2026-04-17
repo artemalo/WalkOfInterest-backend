@@ -1,7 +1,7 @@
 package sfedu.ictis.woi.model;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,7 +17,7 @@ public class SearchRequest {
     @NotNull(message = "Должна быть финишная точка")
     private PointDTO p2;
 
-    @Size(max = 720, message = "Время должно быть меньше 720 минут")
+    @Max(value = 720, message = "Время должно быть меньше 720 минут")
     private Integer maxTime;
 
     private String lang;
