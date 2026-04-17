@@ -30,23 +30,21 @@ public class OptimizationService {
     }
 
     public void optimize(SearchResponse response, SearchRequestDTO request) {
-        // 1. Получаем базовый "скелетный" маршрут от А до Б
         RouteResponse baseRoute = ghClient.getRoute(request.getP1(), request.getP2());
 
-        // 2. Считаем скоры, передавая маршрут для расчета бонуса близости
         calculateAndSortScores(response, baseRoute.route());
 
         markInitialTopPois(response);
 
         List<PoiDTO> candidates = getSelectedPois(response);
 
-        fitToTimeLimit(candidates, request.getMaxTime());
+        int bestCount = findBestFitCount(candidates, request.getMaxTime());
 
-        finalizeCategories(response, request);
+        finalizeCategories(response, request, candidates, bestCount);
     }
 
-    private void fitToTimeLimit(List<PoiDTO> selectedPois, int maxT) {
-        if (selectedPois.isEmpty()) return;
+    private int findBestFitCount(List<PoiDTO> selectedPois, int maxT) {
+        if (selectedPois.isEmpty()) return 0;
 
         selectedPois.sort(Comparator.comparing(PoiDTO::getScore).reversed());
 
@@ -58,7 +56,6 @@ public class OptimizationService {
 
         while (left <= right) {
             int mid = left + (right - left) / 2;
-            // жадным алгоритмом примерное время
             double estimatedTime = calculateGreedyRouteTime(matrix, mid);
 
             if (estimatedTime <= maxT) {
@@ -68,10 +65,7 @@ public class OptimizationService {
                 right = mid - 1;
             }
         }
-
-        for (int i = 0; i < selectedPois.size(); i++) {
-            selectedPois.get(i).setSelected(i < best);
-        }
+        return best;
     }
 
     /**
@@ -111,8 +105,8 @@ public class OptimizationService {
      * Помечает топовые точки как "выбранные" исходя из настроек количества категорий.
      */
     private void markInitialTopPois(SearchResponse response) {
-        response.getCategories().stream()
-                .limit(config.getMaxCategories())
+        response.getCategories()//.stream()
+                //.limit(config.getMaxCategories()) // TODO: Limit MaxCategories - remove
                 .forEach(cat -> {
                     cat.getSubcategories().stream()
                             .limit(config.getMaxSubcategories())
@@ -133,20 +127,27 @@ public class OptimizationService {
                 .collect(Collectors.toList());
     }
 
-    private void finalizeCategories(SearchResponse response, SearchRequestDTO request) {
+    private void finalizeCategories(SearchResponse response, SearchRequestDTO request,
+                                    List<PoiDTO> sortedCandidates, int bestCount) {
+        List<PoiDTO> winners = sortedCandidates.subList(0, bestCount);
+
         for (CategoryDTO cat : response.getCategories()) {
-            List<PointDTO> activePoints = cat.getSubcategories().stream()
+            List<PoiDTO> allCatCandidates = cat.getSubcategories().stream()
                     .flatMap(sub -> sub.getPois().stream())
-                    //.filter(p -> Boolean.TRUE.equals(p.getSelected()))
+                    .filter(p -> Boolean.TRUE.equals(p.getSelected()))
+                    .toList();
+
+            cat.setSelected(allCatCandidates.size());
+
+            List<PointDTO> winnerPointsInCat = allCatCandidates.stream()
+                    .filter(winners::contains)
                     .map(p -> new PointDTO(p.getLat(), p.getLon()))
                     .toList();
 
-            cat.setSelected(activePoints.size());
-
-            if (!activePoints.isEmpty()) {
+            if (!winnerPointsInCat.isEmpty()) {
                 List<PointDTO> fullRoute = new ArrayList<>();
                 fullRoute.add(request.getP1());
-                fullRoute.addAll(activePoints);
+                fullRoute.addAll(winnerPointsInCat);
                 fullRoute.add(request.getP2());
 
                 try {
