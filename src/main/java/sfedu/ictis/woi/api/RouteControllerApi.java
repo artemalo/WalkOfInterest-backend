@@ -5,9 +5,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import sfedu.ictis.woi.model.RouteFromToRequest;
-import sfedu.ictis.woi.model.RouteFromToResponse;
+import sfedu.ictis.woi.model.dto.PointDTO;
+import sfedu.ictis.woi.model.dto.RouteDTO;
+
+import java.util.List;
 
 @Tag(name = "Route Controller", description = "Построение маршрута")
 @ApiResponses({
@@ -22,5 +23,5 @@ public interface RouteControllerApi {
         @ApiResponse(responseCode = "200", description = "Маршрут успешно построен"),
         @ApiResponse(responseCode = "400", description = "Некорректные входные данные")
     })
-    ResponseEntity<RouteFromToResponse> getRoute(@RequestBody RouteFromToRequest request);
+    ResponseEntity<List<RouteDTO>> getRoutes(List<PointDTO> categories);
 }

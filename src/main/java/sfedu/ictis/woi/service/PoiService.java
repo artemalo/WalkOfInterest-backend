@@ -1,5 +1,6 @@
 package sfedu.ictis.woi.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -9,10 +10,9 @@ import sfedu.ictis.woi.model.RouteFromToResponse;
 import sfedu.ictis.woi.model.dto.PointDTO;
 
 
+@Slf4j
 @Service
 public class PoiService {
-    private static final Logger log = LoggerFactory.getLogger(PoiService.class);
-
     private final GraphHopperClient ghClient;
 
     public PoiService(GraphHopperClient ghClient) {
