@@ -52,150 +52,6 @@ public class GraphHopperClient implements GraphHopperRequest {
         return parseToWkt(response);
     }
 
-    @Override
-    public RouteFromToResponse getFromToRoute(PointDTO p1, PointDTO p2) {
-        JsonNode response = handleErrors(webClient.get()
-                .uri(uri -> uri.path("/route")
-                        .queryParam("point", p1.lat() + "," + p1.lon())
-                        .queryParam("point", p2.lat() + "," + p2.lon())
-                        .queryParam("profile", "foot")
-                        .queryParam("calc_points", true)
-                        .queryParam("points_encoded", false)
-                        .build())
-                .retrieve()
-                .bodyToMono(JsonNode.class)
-        ).block();
-
-        if (response == null || response.path("paths").isEmpty()) {
-            throw new ExternalServiceException(SERVICE_NAME, "Could not calculate route between points");
-        }
-
-        JsonNode path = response.path("paths").get(0);
-
-        long timeMs = path.path("time").asLong();
-        double distance = path.path("distance").asDouble();
-
-        List<PointDTO> points = new ArrayList<>();
-        JsonNode coords = path.path("points").path("coordinates");
-
-        for (JsonNode coord : coords) {
-            double lon = coord.get(0).asDouble();
-            double lat = coord.get(1).asDouble();
-            points.add(new PointDTO(lat, lon));
-        }
-
-        return new RouteFromToResponse(timeMs / MS_TO_MIN, distance, points);
-    }
-
-    @Override
-    public long calculateRouteTime(List<PointDTO> pois) {
-        JsonNode response = handleErrors(
-                webClient.get()
-                        .uri(uriBuilder -> {
-                            var uri = uriBuilder.path("/route");
-
-                            for (PointDTO poi : pois) {
-                                uri.queryParam("point", poi.lat() + "," + poi.lon());
-                            }
-
-                            return uri
-                                    .queryParam("profile", "foot")
-                                    .queryParam("optimize", "true")
-                                    .queryParam("calc_points", false)
-                                    .build();
-                        })
-                        .retrieve()
-                        .bodyToMono(JsonNode.class)
-        ).block();
-
-        if (response == null || response.path("paths").isEmpty()) {
-            throw new ExternalServiceException(SERVICE_NAME, "Failed to calculate multi-point route");
-        }
-
-        long timeMs = response.path("paths").get(0).path("time").asLong();
-
-        return timeMs / MS_TO_MIN;
-    }
-
-    @Override
-    public List<RouteDTO> getRoutes(List<PointDTO> categories) {
-        if (categories == null || categories.size() < 2) {
-            return List.of();
-        }
-
-        int variantsCount = 5;
-
-        return Flux.range(0, variantsCount)
-                .flatMap(i -> {
-                    List<PointDTO> variantPoints = prepareVariant(categories, i);
-                    return fetchRouteVariant(variantPoints)
-                            .onErrorResume(e -> {
-                                log.error("Ошибка при расчете варианта {}: {}", i, e.getMessage());
-                                return Mono.empty(); // TODO throw error
-                            });
-                })
-                .collectList()
-                .map(routes -> {
-                    routes.sort(Comparator.comparingLong(RouteDTO::minTime));
-                    return routes;
-                })
-                .block();
-    }
-
-    private Mono<RouteDTO> fetchRouteVariant(List<PointDTO> points) {
-        return webClient.get()
-                .uri(uriBuilder -> {
-                    var uri = uriBuilder.path("/route");
-                    for (PointDTO p : points) {
-                        uri.queryParam("point", p.lat() + "," + p.lon());
-                    }
-                    return uri.queryParam("profile", "foot")
-                            .queryParam("optimize", "false")
-                            .queryParam("calc_points", true)
-                            .queryParam("points_encoded", false)
-                            .build();
-                })
-                .retrieve()
-                .bodyToMono(JsonNode.class)
-                .map(response -> {
-                    JsonNode path = response.path("paths").get(0);
-
-                    long timeMs = path.path("time").asLong();
-                    double distance = path.path("distance").asDouble();
-                    long steps = Math.round(distance / AVG_STEP_LENGTH);
-
-                    List<PointDTO> routePoints = new ArrayList<>();
-                    JsonNode coords = path.path("points").path("coordinates");
-                    for (JsonNode coord : coords) {
-                        routePoints.add(new PointDTO(coord.get(1).asDouble(), coord.get(0).asDouble()));
-                    }
-
-                    return new RouteDTO(timeMs / MS_TO_MIN, distance, steps, routePoints);
-                });
-    }
-
-
-
-    private List<PointDTO> prepareVariant(List<PointDTO> original, int variantIndex) {
-        if (original.size() <= 2 || variantIndex == 0) {
-            return new ArrayList<>(original);
-        }
-
-//        if (variantIndex == 0) {
-//            return calculateRoute(original);
-//        }
-
-        List<PointDTO> middle = new ArrayList<>(original.subList(1, original.size() - 1));
-        Collections.shuffle(middle);
-
-        List<PointDTO> variant = new ArrayList<>();
-        variant.add(original.getFirst());
-        variant.addAll(middle);
-        variant.add(original.getLast());
-
-        return variant;
-    }
-
     private String parseToWkt(JsonNode response) {
         JsonNode polygons = response.path("polygons");
 
@@ -234,6 +90,118 @@ public class GraphHopperClient implements GraphHopperRequest {
 
         wkt.append("))");
         return wkt.toString();
+    }
+
+    @Override
+    public RouteFromToResponse getFromToRoute(PointDTO p1, PointDTO p2) {
+        return calculateRoute(List.of(p1, p2));
+    }
+
+    @Override
+    public long calculateRouteTime(List<PointDTO> pois) {
+        JsonNode response = executeRouteRequest(pois, true, false).block();
+        if (response == null || response.path("paths").isEmpty()) {
+            throw new ExternalServiceException(SERVICE_NAME, "Failed to calculate multi-point route time");
+        }
+        return response.path("paths").get(0).path("time").asLong() / MS_TO_MIN;
+    }
+
+    @Override
+    public List<RouteDTO> getRoutes(List<PointDTO> categories) {
+        if (categories == null || categories.size() < 2) {
+            return List.of();
+        }
+
+        int variantsCount = 5;
+
+        return Flux.range(0, variantsCount)
+                .flatMap(i -> {
+                    boolean shouldOptimize = (i == 0);
+                    List<PointDTO> points = prepareVariant(categories, i);
+                    return fetchRouteVariant(points, shouldOptimize)
+                            .onErrorResume(e -> {
+                                log.error("Ошибка при расчете варианта {}: {}", i, e.getMessage());
+                                return Mono.empty(); // TODO throw error
+                            });
+                })
+                .collectList()
+                .map(routes -> {
+                    routes.sort(Comparator.comparingLong(RouteDTO::minTime));
+                    return routes;
+                })
+                .block();
+    }
+
+    private Mono<RouteDTO> fetchRouteVariant(List<PointDTO> points, boolean optimize) {
+        return executeRouteRequest(points, optimize, true)
+                .map(response -> {
+                    JsonNode path = response.path("paths").get(0);
+                    double distance = path.path("distance").asDouble();
+                    long timeMs = path.path("time").asLong();
+
+                    return new RouteDTO(
+                            timeMs / MS_TO_MIN,
+                            distance,
+                            Math.round(distance / AVG_STEP_LENGTH),
+                            mapToPointList(path.path("points").path("coordinates"))
+                    );
+                });
+    }
+
+    private List<PointDTO> prepareVariant(List<PointDTO> original, int variantIndex) {
+        if (original.size() <= 2 || variantIndex == 0) {
+            return new ArrayList<>(original);
+        }
+
+        List<PointDTO> middle = new ArrayList<>(original.subList(1, original.size() - 1));
+        Collections.shuffle(middle);
+
+        List<PointDTO> variant = new ArrayList<>();
+        variant.add(original.getFirst());
+        variant.addAll(middle);
+        variant.add(original.getLast());
+
+        return variant;
+    }
+
+    public RouteFromToResponse calculateRoute(List<PointDTO> points) {
+        JsonNode response = executeRouteRequest(points, true, true).block();
+
+        if (response == null || response.path("paths").isEmpty()) {
+            throw new ExternalServiceException(SERVICE_NAME, "Не удалось рассчитать оптимальный маршрут");
+        }
+
+        JsonNode path = response.path("paths").get(0);
+        return new RouteFromToResponse(
+                path.path("time").asLong() / MS_TO_MIN,
+                path.path("distance").asDouble(),
+                mapToPointList(path.path("points").path("coordinates"))
+        );
+    }
+
+    private List<PointDTO> mapToPointList(JsonNode coordsNode) {
+        List<PointDTO> points = new ArrayList<>();
+        for (JsonNode coord : coordsNode) {
+            points.add(new PointDTO(coord.get(1).asDouble(), coord.get(0).asDouble()));
+        }
+        return points;
+    }
+
+    private Mono<JsonNode> executeRouteRequest(List<PointDTO> points, boolean optimize, boolean calcPoints) {
+        return handleErrors(webClient.get()
+                .uri(uriBuilder -> {
+                    var uri = uriBuilder.path("/route");
+                    for (PointDTO p : points) {
+                        uri.queryParam("point", p.lat() + "," + p.lon());
+                    }
+                    return uri.queryParam("profile", "foot")
+                            .queryParam("optimize", String.valueOf(optimize))
+                            .queryParam("calc_points", calcPoints)
+                            .queryParam("points_encoded", false)
+                            .build();
+                })
+                .retrieve()
+                .bodyToMono(JsonNode.class));
     }
 
     private <T> Mono<T> handleErrors(Mono<T> mono) {
