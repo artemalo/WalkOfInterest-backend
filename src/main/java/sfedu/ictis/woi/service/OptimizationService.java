@@ -3,7 +3,7 @@ package sfedu.ictis.woi.service;
 import org.springframework.stereotype.Service;
 import sfedu.ictis.woi.config.OptimizerConfig;
 import sfedu.ictis.woi.infrastructure.client.GraphHopperClient;
-import sfedu.ictis.woi.model.RouteResponse;
+import sfedu.ictis.woi.model.RouteFromToResponse;
 import sfedu.ictis.woi.model.SearchResponse;
 import sfedu.ictis.woi.model.dto.*;
 
@@ -30,7 +30,7 @@ public class OptimizationService {
     }
 
     public void optimize(SearchResponse response, SearchRequestDTO request) {
-        RouteResponse baseRoute = ghClient.getRoute(request.getP1(), request.getP2());
+        RouteFromToResponse baseRoute = ghClient.getFromToRoute(request.getP1(), request.getP2());
 
         calculateAndSortScores(response, baseRoute.route());
 
@@ -106,7 +106,7 @@ public class OptimizationService {
      */
     private void markInitialTopPois(SearchResponse response) {
         response.getCategories()//.stream()
-                //.limit(config.getMaxCategories()) // TODO: Limit MaxCategories - remove
+                //.limit(config.getMaxCategories()) // TODO: Limit MaxCategories - remove?
                 .forEach(cat -> {
                     cat.getSubcategories().stream()
                             .limit(config.getMaxSubcategories())

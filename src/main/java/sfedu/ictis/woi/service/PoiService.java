@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import sfedu.ictis.woi.exception.BusinessException;
 import sfedu.ictis.woi.infrastructure.client.GraphHopperClient;
-import sfedu.ictis.woi.model.RouteResponse;
+import sfedu.ictis.woi.model.RouteFromToResponse;
 import sfedu.ictis.woi.model.dto.PointDTO;
 
 
@@ -19,9 +19,9 @@ public class PoiService {
         this.ghClient = ghClient;
     }
 
-    public RouteResponse getRoute(PointDTO from, PointDTO to) {
+    public RouteFromToResponse getRoute(PointDTO from, PointDTO to) {
         try {
-            RouteResponse route = ghClient.getRoute(from, to);
+            RouteFromToResponse route = ghClient.getFromToRoute(from, to);
 
             if (route.minTime() < 0) {
                 throw new IllegalStateException("Invalid route time");

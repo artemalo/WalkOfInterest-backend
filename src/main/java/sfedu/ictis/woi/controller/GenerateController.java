@@ -5,8 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.api.GenerateControllerApi;
 import sfedu.ictis.woi.mapper.SearchRequestMapper;
-import sfedu.ictis.woi.model.RouteRequest;
-import sfedu.ictis.woi.model.RouteResponse;
+import sfedu.ictis.woi.model.RouteFromToRequest;
+import sfedu.ictis.woi.model.RouteFromToResponse;
 import sfedu.ictis.woi.model.SearchRequest;
 import sfedu.ictis.woi.model.SearchResponse;
 import sfedu.ictis.woi.service.OptimizationService;
@@ -28,7 +28,7 @@ public class GenerateController implements GenerateControllerApi {
 
     @Override
     @PostMapping("/route")
-    public ResponseEntity<RouteResponse> getRoute(@RequestBody RouteRequest request) {
+    public ResponseEntity<RouteFromToResponse> getFromToRoute(@RequestBody RouteFromToRequest request) {
         return ResponseEntity.ok(poiService.getRoute(request.getP1(), request.getP2()));
     }
 

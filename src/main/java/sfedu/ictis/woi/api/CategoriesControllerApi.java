@@ -6,8 +6,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
-import sfedu.ictis.woi.model.RouteRequest;
-import sfedu.ictis.woi.model.RouteResponse;
+import sfedu.ictis.woi.model.RouteFromToRequest;
+import sfedu.ictis.woi.model.RouteFromToResponse;
 
 @Tag(name = "Categories Controller", description = "Пересчет точек интереса")
 @ApiResponses({
@@ -22,5 +22,5 @@ public interface CategoriesControllerApi {
             @ApiResponse(responseCode = "200", description = "Маршрут успешно построен"),
             @ApiResponse(responseCode = "400", description = "Некорректные входные данные")
     })
-    ResponseEntity<RouteResponse> getTime(@RequestBody RouteRequest request);
+    ResponseEntity<RouteFromToResponse> getTime(@RequestBody RouteFromToRequest request);
 }

@@ -4,7 +4,7 @@ import sfedu.ictis.woi.model.dto.PointDTO;
 
 import java.util.List;
 
-public record RouteResponse(
+public record RouteFromToResponse(
         long minTime,
         double distance,
         List<PointDTO> route

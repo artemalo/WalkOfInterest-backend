@@ -1,12 +1,15 @@
 package sfedu.ictis.woi.infrastructure.client;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import sfedu.ictis.woi.model.RouteResponse;
+import sfedu.ictis.woi.model.RouteFromToResponse;
 import sfedu.ictis.woi.model.dto.PointDTO;
+import sfedu.ictis.woi.model.dto.RouteDTO;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Component
 public class GraphHopperCustom implements GraphHopperRequest {
     private static final double EARTH_RADIUS = 6371000;
@@ -43,13 +46,21 @@ public class GraphHopperCustom implements GraphHopperRequest {
     }
 
     @Override
-    public RouteResponse getRoute(PointDTO p1, PointDTO p2) {
-        return new RouteResponse(-1, -1, new ArrayList<>());
+    public RouteFromToResponse getFromToRoute(PointDTO p1, PointDTO p2) {
+        log.warn(this.getClass().getSimpleName(), "getFromToRoute");
+        return new RouteFromToResponse(-1, -1, new ArrayList<>());
     }
 
     @Override
     public long calculateRouteTime(List<PointDTO> pois) {
+        log.warn(this.getClass().getSimpleName(), "calculateRouteTime");
         return -1;
+    }
+
+    @Override
+    public List<RouteDTO> getRoutes(List<PointDTO> categories) {
+        log.warn(this.getClass().getSimpleName(), "getRoutes");
+        return List.of();
     }
 
     private String toWkt(List<double[]> coords) {

@@ -8,7 +8,7 @@ import sfedu.ictis.woi.model.dto.PointDTO;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RouteRequest {
+public class RouteFromToRequest {
     private PointDTO p1;
     private PointDTO p2;
 }

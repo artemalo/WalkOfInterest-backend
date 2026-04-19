@@ -6,8 +6,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
-import sfedu.ictis.woi.model.RouteRequest;
-import sfedu.ictis.woi.model.RouteResponse;
+import sfedu.ictis.woi.model.RouteFromToRequest;
+import sfedu.ictis.woi.model.RouteFromToResponse;
 import sfedu.ictis.woi.model.SearchRequest;
 import sfedu.ictis.woi.model.SearchResponse;
 
@@ -24,7 +24,7 @@ public interface GenerateControllerApi {
             @ApiResponse(responseCode = "200", description = "Маршрут успешно построен"),
             @ApiResponse(responseCode = "400", description = "Некорректные входные данные")
     })
-    ResponseEntity<RouteResponse> getRoute(@RequestBody RouteRequest request);
+    ResponseEntity<RouteFromToResponse> getFromToRoute(@RequestBody RouteFromToRequest request);
 
     @Operation(
             summary = "Поиск POI",

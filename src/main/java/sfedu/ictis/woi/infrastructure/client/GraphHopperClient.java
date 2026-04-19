@@ -6,18 +6,24 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import sfedu.ictis.woi.exception.ExternalServiceException;
-import sfedu.ictis.woi.model.RouteResponse;
+import sfedu.ictis.woi.model.RouteFromToResponse;
 import sfedu.ictis.woi.model.dto.PointDTO;
+import sfedu.ictis.woi.model.dto.RouteDTO;
 import tools.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
 @Component
 public class GraphHopperClient implements GraphHopperRequest {
+    private static final double AVG_STEP_LENGTH = 0.75;
+
     private static final int MS_TO_MIN = 60000;
     private static final String SERVICE_NAME = "GraphHopper";
 
@@ -47,7 +53,7 @@ public class GraphHopperClient implements GraphHopperRequest {
     }
 
     @Override
-    public RouteResponse getRoute(PointDTO p1, PointDTO p2) {
+    public RouteFromToResponse getFromToRoute(PointDTO p1, PointDTO p2) {
         JsonNode response = handleErrors(webClient.get()
                 .uri(uri -> uri.path("/route")
                         .queryParam("point", p1.lat() + "," + p1.lon())
@@ -78,7 +84,7 @@ public class GraphHopperClient implements GraphHopperRequest {
             points.add(new PointDTO(lat, lon));
         }
 
-        return new RouteResponse(timeMs / MS_TO_MIN, distance, points);
+        return new RouteFromToResponse(timeMs / MS_TO_MIN, distance, points);
     }
 
     @Override
@@ -111,7 +117,84 @@ public class GraphHopperClient implements GraphHopperRequest {
         return timeMs / MS_TO_MIN;
     }
 
+    @Override
+    public List<RouteDTO> getRoutes(List<PointDTO> categories) {
+        if (categories == null || categories.size() < 2) {
+            return List.of();
+        }
 
+        int variantsCount = 5;
+
+        return Flux.range(0, variantsCount)
+                .flatMap(i -> {
+                    List<PointDTO> variantPoints = prepareVariant(categories, i);
+                    return fetchRouteVariant(variantPoints)
+                            .onErrorResume(e -> {
+                                log.error("Ошибка при расчете варианта {}: {}", i, e.getMessage());
+                                return Mono.empty(); // TODO throw error
+                            });
+                })
+                .collectList()
+                .map(routes -> {
+                    routes.sort(Comparator.comparingLong(RouteDTO::minTime));
+                    return routes;
+                })
+                .block();
+    }
+
+    private Mono<RouteDTO> fetchRouteVariant(List<PointDTO> points) {
+        return webClient.get()
+                .uri(uriBuilder -> {
+                    var uri = uriBuilder.path("/route");
+                    for (PointDTO p : points) {
+                        uri.queryParam("point", p.lat() + "," + p.lon());
+                    }
+                    return uri.queryParam("profile", "foot")
+                            .queryParam("optimize", "false")
+                            .queryParam("calc_points", true)
+                            .queryParam("points_encoded", false)
+                            .build();
+                })
+                .retrieve()
+                .bodyToMono(JsonNode.class)
+                .map(response -> {
+                    JsonNode path = response.path("paths").get(0);
+
+                    long timeMs = path.path("time").asLong();
+                    double distance = path.path("distance").asDouble();
+                    long steps = Math.round(distance / AVG_STEP_LENGTH);
+
+                    List<PointDTO> routePoints = new ArrayList<>();
+                    JsonNode coords = path.path("points").path("coordinates");
+                    for (JsonNode coord : coords) {
+                        routePoints.add(new PointDTO(coord.get(1).asDouble(), coord.get(0).asDouble()));
+                    }
+
+                    return new RouteDTO(timeMs / MS_TO_MIN, distance, steps, routePoints);
+                });
+    }
+
+
+
+    private List<PointDTO> prepareVariant(List<PointDTO> original, int variantIndex) {
+        if (original.size() <= 2 || variantIndex == 0) {
+            return new ArrayList<>(original);
+        }
+
+//        if (variantIndex == 0) {
+//            return calculateRoute(original);
+//        }
+
+        List<PointDTO> middle = new ArrayList<>(original.subList(1, original.size() - 1));
+        Collections.shuffle(middle);
+
+        List<PointDTO> variant = new ArrayList<>();
+        variant.add(original.getFirst());
+        variant.addAll(middle);
+        variant.add(original.getLast());
+
+        return variant;
+    }
 
     private String parseToWkt(JsonNode response) {
         JsonNode polygons = response.path("polygons");
