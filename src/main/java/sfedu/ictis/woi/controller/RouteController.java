@@ -2,6 +2,7 @@ package sfedu.ictis.woi.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import sfedu.ictis.woi.api.RouteControllerApi;
@@ -22,7 +23,7 @@ public class RouteController implements RouteControllerApi {
 
     @Override
     @PostMapping("/routes")
-    public ResponseEntity<List<RouteDTO>> getRoutes(List<PointDTO> categories) {
+    public ResponseEntity<List<RouteDTO>> getRoutes(@RequestBody List<PointDTO> categories) {
         return ResponseEntity.ok(routeService.getRoutes(categories));
     }
 }
