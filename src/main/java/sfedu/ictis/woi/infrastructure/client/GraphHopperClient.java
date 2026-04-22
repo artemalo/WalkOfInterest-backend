@@ -107,7 +107,7 @@ public class GraphHopperClient implements GraphHopperRequest {
     }
 
     @Override
-    public List<RouteDTO> getRoutes(List<PointDTO> categories) {
+    public List<RouteDTO> getRoutes(List<PointDTO> categories) { //TODO одинаковые не возвращать
         int variantsCount = 5;
 
         return Flux.range(0, variantsCount)
