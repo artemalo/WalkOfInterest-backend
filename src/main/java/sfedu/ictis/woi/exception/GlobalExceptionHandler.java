@@ -1,68 +1,107 @@
 package sfedu.ictis.woi.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.security.core.AuthenticationException;
 
-import javax.naming.AuthenticationException;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-  @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {// TODO: testing
-    Map<String, String> errors = new HashMap<>();
 
+  // 400 Bad Request - Ошибки валидации DTO
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    Map<String, String> errors = new HashMap<>();
     for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
       errors.put(fieldError.getField(), fieldError.getDefaultMessage());
     }
 
-    return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+    ErrorResponse response = new ErrorResponse(
+            "VALIDATION_ERROR",
+            "Ошибка валидации входных данных",
+            errors
+    );
+    return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
   }
 
+  // 401 Unauthorized - Ошибка секьюрити
   @ExceptionHandler(AuthenticationException.class)
-  public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException ex) {
+  @ResponseStatus(HttpStatus.UNAUTHORIZED)
+  public ResponseEntity<ErrorResponse> handleAuthenticationException() {
+
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(new ErrorResponse("Неверные учётные данные или токен", "UNAUTHORIZED"));
+            .body(new ErrorResponse("UNAUTHORIZED", "Неверные учётные данные или токен"));
   }
 
+  // 503 Service Unavailable - Упала база
   @ExceptionHandler({DataAccessException.class, SQLException.class})
-  public ResponseEntity<ErrorResponse> handleDb() {
+  @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+  public ResponseEntity<ErrorResponse> handleDb(Exception ex) {
+    log.error("Ошибка базы данных: ", ex);
+
     return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-            .body(new ErrorResponse("База временно недоступна", "DB_ERROR"));
+            .body(new ErrorResponse("DB_ERROR", "База данных временно недоступна"));
   }
 
   // 404 Not Found
   @ExceptionHandler(ResourceNotFoundException.class)
+  @ResponseStatus(HttpStatus.NOT_FOUND)
   public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
     return ResponseEntity.status(HttpStatus.NOT_FOUND)
             .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
   }
 
   // 401 Unauthorized
-  @ExceptionHandler(InvalidCredentialsException.class)
-  public ResponseEntity<ErrorResponse> handleUnauthorized(InvalidCredentialsException ex) {
+  @ExceptionHandler({InvalidCredentialsException.class, BadTokenException.class})
+  @ResponseStatus(HttpStatus.UNAUTHORIZED)
+  public ResponseEntity<ErrorResponse> handleUnauthorized(BaseException ex) {
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
   }
 
   // 403 Forbidden
   @ExceptionHandler(AccessDeniedException.class)
+  @ResponseStatus(HttpStatus.FORBIDDEN)
   public ResponseEntity<ErrorResponse> handleForbidden(AccessDeniedException ex) {
     return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
   }
 
-  // Все остальные наследники BaseException (400 Bad Request)
+  // 409 Conflict
+  @ExceptionHandler(UserAlreadyExistsException.class)
+  @ResponseStatus(HttpStatus.CONFLICT)
+  public ResponseEntity<ErrorResponse> handleConflict(UserAlreadyExistsException ex) {
+    return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
+  }
+
+  // 400 Bad Request - Все остальные
   @ExceptionHandler(BaseException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
   public ResponseEntity<ErrorResponse> handleBaseException(BaseException ex) {
+    log.warn("Бизнес-ошибка: {} - {}", ex.getCode(), ex.getMessage());
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
             .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
+  }
+
+  // 500 Internal Server Error - Отлов всех непредвиденных ошибок (ОБЯЗАТЕЛЬНО!)
+  @ExceptionHandler(Exception.class)
+  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+  public ResponseEntity<ErrorResponse> handleAllUncaughtException(Exception ex) {
+    log.error("Непредвиденная ошибка сервера: ", ex);
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new ErrorResponse("INTERNAL_SERVER_ERROR", "Внутренняя ошибка сервера. Обратитесь к администратору."));
   }
 }

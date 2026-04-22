@@ -11,6 +11,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 import sfedu.ictis.woi.exception.ErrorResponse;
 import sfedu.ictis.woi.filter.JwtAuthenticationFilter;
 import tools.jackson.databind.ObjectMapper;
@@ -33,8 +34,8 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login/**", "/api/auth/register/**").permitAll()
                         .requestMatchers(
-                                "/api/auth/**",
                                 "/api-docs/**",
                                 "/swagger-ui/**").permitAll()
                         .anyRequest().authenticated()
@@ -63,20 +64,4 @@ public class SecurityConfig {
                     new ErrorResponse("UNAUTHORIZED", "Требуется авторизация"));
         };
     }
-//
-//    @Bean
-//    public org.springframework.security.web.access.AccessDeniedHandler accessDeniedHandler() {
-//        return (request, response, accessDeniedException) -> {
-//            response.setStatus(HttpStatus.FORBIDDEN.value());
-//            response.setContentType("application/json");
-//            response.setCharacterEncoding("UTF-8");
-//
-//            ErrorResponse error = new ErrorResponse(
-//                    "FORBIDDEN",
-//                    "Недостаточно прав"
-//            );
-//
-//            objectMapper.writeValue(response.getOutputStream(), error);
-//        };
-//    }
 }

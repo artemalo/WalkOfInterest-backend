@@ -1,6 +1,7 @@
 package sfedu.ictis.woi.model.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,6 +18,7 @@ public class UserEntity {
 
     private String username;
 
+    @Size(min = 8, message = "Пароль слишком короткий")
     @Column(name = "user_password")
     private String password;
 
