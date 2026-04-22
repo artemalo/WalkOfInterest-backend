@@ -34,11 +34,16 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.username())) {
-            throw new UserAlreadyExistsException(request.username());
+            throw new UserAlreadyExistsException("Логин занят: " + request.username());
+        }
+
+        if (userRepository.existsByEmail(request.email())) {
+            throw new UserAlreadyExistsException("Почта уже зарегистрирована: " + request.email());
         }
 
         UserEntity user = new UserEntity();
         user.setUsername(request.username());
+        user.setEmail(request.email());
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
@@ -46,10 +51,9 @@ public class AuthService {
 
         userRepository.save(user);
 
-        var userDetails = applicationConfig.userDetailsService().loadUserByUsername(user.getUsername());
-
+        var userDetails = applicationConfig.userDetailsService().loadUserByUsername(user.getEmail());
         String accessToken  = jwtService.generateToken(userDetails);
-        String refreshToken = refreshTokenService.createRefreshToken(user.getUsername()).getToken();
+        String refreshToken = refreshTokenService.createRefreshToken(user.getEmail()).getToken();
 
         return new AuthResponse(accessToken, refreshToken);
     }
@@ -57,16 +61,16 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.username(), request.password())
+                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
             );
         } catch (BadCredentialsException e) {
             throw new InvalidCredentialsException();
         }
 
-        var userDetails = applicationConfig.userDetailsService().loadUserByUsername(request.username());
+        var userDetails = applicationConfig.userDetailsService().loadUserByUsername(request.email());
 
         String accessToken = jwtService.generateToken(userDetails);
-        String refreshToken = refreshTokenService.createRefreshToken(request.username()).getToken();
+        String refreshToken = refreshTokenService.createRefreshToken(request.email()).getToken();
 
         return new AuthResponse(accessToken, refreshToken);
     }
@@ -75,16 +79,17 @@ public class AuthService {
         RefreshTokenEntity token = refreshTokenService.verify(refreshToken);
 
         var userDetails = applicationConfig.userDetailsService()
-                .loadUserByUsername(token.getUser().getUsername());
+                .loadUserByUsername(token.getUser().getEmail());
 
         String newAccessToken = jwtService.generateToken(userDetails);
 
         return new AuthResponse(newAccessToken, refreshToken);
     }
 
+    @Transactional
     public void logout(String refreshToken) {
         RefreshTokenEntity token = refreshTokenRepository.findByToken(refreshToken)
-                .orElseThrow(() -> new BadTokenException("Invalid refresh token"));
+                .orElseThrow(() -> new BadTokenException("Невалидный refresh токен"));
 
         refreshTokenRepository.delete(token);
     }
@@ -95,10 +100,10 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
 
-        String username = authentication.getName();
+        String email = authentication.getName();
 
-        UserEntity user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
 
         refreshTokenRepository.deleteByUser(user);
     }

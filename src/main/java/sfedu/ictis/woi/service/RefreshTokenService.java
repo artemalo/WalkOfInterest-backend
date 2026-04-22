@@ -3,6 +3,7 @@ package sfedu.ictis.woi.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import sfedu.ictis.woi.exception.BadTokenException;
 import sfedu.ictis.woi.exception.ResourceNotFoundException;
 import sfedu.ictis.woi.model.entity.RefreshTokenEntity;
@@ -22,8 +23,9 @@ public class RefreshTokenService {
     @Value("${jwt.refresh.expiration}")
     private long REFRESH_EXPIRATION;
 
-    public RefreshTokenEntity createRefreshToken(String username) {
-        UserEntity user = userRepository.findByUsername(username)
+    @Transactional
+    public RefreshTokenEntity createRefreshToken(String email) {
+        UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
 
         RefreshTokenEntity token = new RefreshTokenEntity();
@@ -34,13 +36,14 @@ public class RefreshTokenService {
         return refreshTokenRepository.save(token); // in the future: save encoded
     }
 
+    @Transactional
     public RefreshTokenEntity verify(String token) {
         RefreshTokenEntity refreshToken = refreshTokenRepository.findByToken(token)
-                .orElseThrow(() -> new BadTokenException("Invalid refresh token"));
+                .orElseThrow(() -> new BadTokenException("Невалидный refresh токен"));
 
         if (refreshToken.getExpiryDate().before(new Date())) {
             refreshTokenRepository.delete(refreshToken);
-            throw new BadTokenException("Refresh token expired");
+            throw new BadTokenException("Срок действия refresh токена истек");
         }
 
         return refreshToken;

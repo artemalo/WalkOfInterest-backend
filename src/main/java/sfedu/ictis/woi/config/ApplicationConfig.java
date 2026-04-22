@@ -25,16 +25,13 @@ public class ApplicationConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return username -> {
-            UserEntity user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден"));
-
-            return new User(
-                    user.getUsername(),
-                    user.getPassword(),
-                    Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
-            );
-        };
+        return email -> userRepository.findByEmail(email)
+                .map(user -> new User(
+                        user.getEmail(),
+                        user.getPassword(),
+                        Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                ))
+                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с email " + email + " не найден"));
     }
 
     @Bean
