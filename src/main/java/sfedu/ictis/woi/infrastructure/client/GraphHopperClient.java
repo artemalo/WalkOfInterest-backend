@@ -9,7 +9,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import sfedu.ictis.woi.exception.ExternalServiceException;
-import sfedu.ictis.woi.model.RouteFromToResponse;
+import sfedu.ictis.woi.model.RouteResponse;
 import sfedu.ictis.woi.model.dto.PointDTO;
 import sfedu.ictis.woi.model.dto.RouteDTO;
 import tools.jackson.databind.JsonNode;
@@ -93,7 +93,7 @@ public class GraphHopperClient implements GraphHopperRequest {
     }
 
     @Override
-    public RouteFromToResponse getFromToRoute(PointDTO p1, PointDTO p2) {
+    public RouteResponse getFromToRoute(PointDTO p1, PointDTO p2) {
         return calculateRoute(List.of(p1, p2));
     }
 
@@ -160,7 +160,7 @@ public class GraphHopperClient implements GraphHopperRequest {
         return variant;
     }
 
-    public RouteFromToResponse calculateRoute(List<PointDTO> points) {
+    public RouteResponse calculateRoute(List<PointDTO> points) {
         JsonNode response = executeRouteRequest(points, true, true).block();
 
         if (response == null || response.path("paths").isEmpty()) {
@@ -168,7 +168,7 @@ public class GraphHopperClient implements GraphHopperRequest {
         }
 
         JsonNode path = response.path("paths").get(0);
-        return new RouteFromToResponse(
+        return new RouteResponse(
                 path.path("time").asLong() / MS_TO_MIN,
                 path.path("distance").asDouble(),
                 mapToPointList(path.path("points").path("coordinates"))

@@ -2,7 +2,7 @@ package sfedu.ictis.woi.infrastructure.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import sfedu.ictis.woi.model.RouteFromToResponse;
+import sfedu.ictis.woi.model.RouteResponse;
 import sfedu.ictis.woi.model.dto.PointDTO;
 import sfedu.ictis.woi.model.dto.RouteDTO;
 
@@ -46,9 +46,9 @@ public class GraphHopperCustom implements GraphHopperRequest {
     }
 
     @Override
-    public RouteFromToResponse getFromToRoute(PointDTO p1, PointDTO p2) {
+    public RouteResponse getFromToRoute(PointDTO p1, PointDTO p2) {
         log.warn(this.getClass().getSimpleName(), "getFromToRoute");
-        return new RouteFromToResponse(-1, -1, new ArrayList<>());
+        return new RouteResponse(-1, -1, new ArrayList<>());
     }
 
     @Override

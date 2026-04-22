@@ -21,7 +21,6 @@ public class RouteController implements RouteControllerApi {
         this.routeService = routeService;
     }
 
-    @Override
     @PostMapping("/routes")
     public ResponseEntity<List<RouteDTO>> getRoutes(@RequestBody List<PointDTO> categories) {
         return ResponseEntity.ok(routeService.getRoutes(categories));

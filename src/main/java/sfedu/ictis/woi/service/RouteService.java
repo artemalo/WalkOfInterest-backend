@@ -3,7 +3,6 @@ package sfedu.ictis.woi.service;
 import org.springframework.stereotype.Service;
 import sfedu.ictis.woi.exception.BusinessException;
 import sfedu.ictis.woi.infrastructure.client.GraphHopperClient;
-import sfedu.ictis.woi.model.RouteFromToResponse;
 import sfedu.ictis.woi.model.dto.PointDTO;
 import sfedu.ictis.woi.model.dto.RouteDTO;
 
