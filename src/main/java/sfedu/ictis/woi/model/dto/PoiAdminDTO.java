@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import sfedu.ictis.woi.model.entity.PoiStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -13,7 +14,7 @@ import java.util.List;
 public class PoiAdminDTO {
     private Long id;
     private PointDTO point;
-
+    // TODO: list<photo>
     private String name;
     private String description;
     private String lang;
@@ -22,4 +23,6 @@ public class PoiAdminDTO {
 
     private PoiStatus status;
     private UserDTO createdUser;
+
+    private LocalDateTime lastUpdate;
 }

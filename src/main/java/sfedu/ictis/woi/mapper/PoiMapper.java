@@ -37,6 +37,7 @@ public class PoiMapper {
         dto.setPoint(extractPoint(entity.getGeom(), entity.getId()));
         dto.setStatus(entity.getStatus());
         dto.setCreatedUser(mapToUserDTO(entity.getUser()));
+        dto.setLastUpdate(entity.getLastUpdate());
 
         applyLocale(entity, targetLang, dto);
 
