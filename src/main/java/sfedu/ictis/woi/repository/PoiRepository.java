@@ -62,4 +62,12 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
             );
 
     Page<PoiEntity> findAllByStatus(PoiStatus status, Pageable pageable);
+
+    @Query(value = """
+        SELECT EXISTS (
+            SELECT 1 FROM pois
+            WHERE ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography, 5)
+        )
+        """, nativeQuery = true)
+    boolean existsNearby(@Param("lon") Double lon, @Param("lat") Double lat);
 }

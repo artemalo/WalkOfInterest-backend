@@ -2,6 +2,8 @@ package sfedu.ictis.woi.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import sfedu.ictis.woi.api.PoiControllerApi;
 import sfedu.ictis.woi.model.dto.PoiDTO;
@@ -14,8 +16,8 @@ import java.util.List;
 public class PoiController implements PoiControllerApi {
     private final PoiService poiService;
 
-    @Override
-    public PoiDTO createPoi(PoiDTO poi) {
+    @PostMapping
+    public PoiDTO createPoi(@RequestBody PoiDTO poi) {
         return poiService.createPoi(poi, SecurityContextHolder.getContext().getAuthentication());
     }
 

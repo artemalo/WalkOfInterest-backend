@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import sfedu.ictis.woi.exception.InvalidCredentialsException;
+import sfedu.ictis.woi.exception.PoiAlreadyExistsException;
 import sfedu.ictis.woi.exception.ResourceNotFoundException;
 import sfedu.ictis.woi.mapper.PoiMapper;
 import sfedu.ictis.woi.model.dto.PoiDTO;
@@ -38,10 +39,12 @@ public class PoiService {
             throw new InvalidCredentialsException();
         }
 
-        String userEmail = authentication.getName();
-
-        UserEntity user = userRepository.findByEmail(userEmail)
+        UserEntity user = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+
+        if (poiRepository.existsNearby(poiDTO.getLon(), poiDTO.getLat())) {
+            throw new PoiAlreadyExistsException("Точка уже существует в этой локации или слишком близко (менее 5 метров)");
+        }
 
         PoiEntity entity = new PoiEntity();
 

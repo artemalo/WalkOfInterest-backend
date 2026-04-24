@@ -80,9 +80,9 @@ public class GlobalExceptionHandler {
   }
 
   // 409 Conflict
-  @ExceptionHandler(UserAlreadyExistsException.class)
+  @ExceptionHandler({UserAlreadyExistsException.class, PoiAlreadyExistsException.class})
   @ResponseStatus(HttpStatus.CONFLICT)
-  public ResponseEntity<ErrorResponse> handleConflict(UserAlreadyExistsException ex) {
+  public ResponseEntity<ErrorResponse> handleConflict(BaseException ex) {
     return ResponseEntity.status(HttpStatus.CONFLICT)
             .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
   }
