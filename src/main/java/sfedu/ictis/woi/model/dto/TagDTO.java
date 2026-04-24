@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TagDTO {
-    private Integer id;
-    private Double weight;
+    private Integer subcategoryId;
+    private Double relevance;
 }
