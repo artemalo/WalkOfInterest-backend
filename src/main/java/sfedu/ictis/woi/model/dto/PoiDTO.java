@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import sfedu.ictis.woi.model.entity.PoiStatus;
 
 import java.util.List;
 
@@ -21,6 +22,9 @@ public class PoiDTO {
     private Boolean selected = false;
     private Double rate;
     private Integer count;
+
+    private PoiStatus status;
+    private boolean userGenerated;
 
     @JsonIgnore
     private Double score = 0.0;

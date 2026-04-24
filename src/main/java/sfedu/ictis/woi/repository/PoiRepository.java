@@ -17,6 +17,8 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
             s.id as subId, s.subcategory_name as subName, s.weight as weight,
             si.subcategory_description as subDescription, si.subcategory_icon as subIcon,
             p.id as poiId,
+            p.user_id as userId,
+            p.status as status,
             pl.langue as poiLang, pl.poi_name as poiName, pl.poi_description as poiDesc,
             COALESCE(pr.avg_rate, 0.0) as rate,
             COALESCE(pr.count_rate, 0) as count,
@@ -45,7 +47,10 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
             )
             LIMIT 1
         ) pl ON true
-        WHERE ST_Within(p.geom, ST_GeomFromText(:isochroneWkt, 4326))
+        WHERE
+                p.status != 'REJECTED'
+                AND p.geom && ST_GeomFromText(:isochroneWkt, 4326)
+                AND ST_Within(p.geom, ST_GeomFromText(:isochroneWkt, 4326))
         ORDER BY s.weight DESC;
         """, nativeQuery = true)
     List<FlatPoiProjection> findPoisInIsochrone(

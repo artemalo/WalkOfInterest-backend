@@ -24,15 +24,32 @@ public class ScoreCalculator {
     public double calculatePoiScore(PoiDTO poi, double distanceWeight) {
         StandardEvaluationContext context = new StandardEvaluationContext();
 
-        // Если данных нет, берем дефолты из конфига
-        double rate = (poi.getRate() == null || poi.getRate() == 0) ? config.getDefaults().getRate() : poi.getRate();
-        int count = (poi.getCount() == null || poi.getCount() == 0) ? config.getDefaults().getCount() : poi.getCount();
+        double rate = (poi.getRate() == null || poi.getRate() == 0)
+                ? config.getDefaults().getRate()
+                : poi.getRate();
+        int count = (poi.getCount() == null || poi.getCount() == 0)
+                ? config.getDefaults().getCount()
+                : poi.getCount();
 
         context.setVariable("rate", rate);
         context.setVariable("countRate", count);
         context.setVariable("distWeight", distanceWeight);
-        // (is_not_userPoi)
-        context.setVariable("userPoiBonus", 1.0);
+
+        boolean isApproved = poi.getStatus() != null && poi.getStatus().name().equals("APPROVED");
+        boolean isNotUserPoi = !poi.isUserGenerated();
+
+        double statusWeight = isApproved
+                ? config.getWeights().getApprovedWeight()
+                : config.getWeights().getNotApprovedWeight();
+
+        double userPoiBonus = isNotUserPoi
+                ? 1.0
+                : config.getWeights().getUserPoiPenalty();
+
+        context.setVariable("statusWeight", statusWeight);
+        context.setVariable("userPoiBonus", userPoiBonus);
+
+        // TODO: in the future - свежесть poi
 
         Double result = parser.parseExpression(config.getPoiFormula())
                 .getValue(context, Double.class);

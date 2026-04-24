@@ -60,12 +60,10 @@ public class DataMapper {
                             .mapToInt(List::size)
                             .sum();
 
-                    // Создаем список SubCategoryDTO
                     List<SubCategoryDTO> subDTOs = catEntry.getValue().entrySet().stream()
                             .map(subEntry -> {
                                 var subKey = subEntry.getKey();
 
-                                // Создаем список PoiDTO (бывшие MarkerDTO)
                                 List<PoiDTO> pois = subEntry.getValue().stream()
                                         .map(rp -> {
                                             PoiDTO poi = new PoiDTO();
@@ -79,6 +77,9 @@ public class DataMapper {
 
                                             poi.setRate(rp.winner().getRate());
                                             poi.setCount(rp.winner().getCount());
+
+                                            poi.setStatus(rp.winner().getStatus());
+                                            poi.setUserGenerated(rp.winner().getUserId() != null);
 
                                             poi.setSelected(false);
                                             poi.setScore(0.0);
@@ -97,7 +98,6 @@ public class DataMapper {
                             })
                             .collect(Collectors.toList());
 
-                    // Создаем CategoryDTO
                     CategoryDTO cat = new CategoryDTO();
                     cat.setId(catKey.id());
                     cat.setName(catKey.name());

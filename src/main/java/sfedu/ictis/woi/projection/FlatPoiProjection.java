@@ -1,5 +1,8 @@
 package sfedu.ictis.woi.projection;
 
+
+import sfedu.ictis.woi.model.entity.PoiStatus;
+
 public interface FlatPoiProjection {
     // categories
     Integer getCatId();
@@ -21,6 +24,8 @@ public interface FlatPoiProjection {
     String getPoiDesc();
     Double getRate();
     Integer getCount();
+    PoiStatus getStatus();
+    Boolean getUserId();
 
     // Coordinate
     Double getLat();

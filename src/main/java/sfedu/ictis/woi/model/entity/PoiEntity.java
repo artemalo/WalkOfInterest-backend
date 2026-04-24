@@ -45,6 +45,12 @@ public class PoiEntity {
     )
     private Set<SubcategoryEntity> subcategories = new HashSet<>();
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private PoiStatus status = PoiStatus.APPROVED;
+
+
+
     public boolean isUserGenerated() {
         return this.user != null;
     }
