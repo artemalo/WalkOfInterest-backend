@@ -6,7 +6,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -48,6 +50,12 @@ public class PoiEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private PoiStatus status = PoiStatus.APPROVED;
+
+    @OneToMany(mappedBy = "poi", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PoisLanguesEntity> locales = new ArrayList<>();
+
+    @OneToOne(mappedBy = "poi", cascade = CascadeType.ALL)
+    private PoiRatingsEntity rating;
 
 
 

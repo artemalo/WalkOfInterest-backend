@@ -20,7 +20,8 @@ public interface AdminControllerApi {
     List<PoiDTO> getPoisByStatus(
             @RequestBody UpdateStatusRequest request,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "default") String lang
     );
 
     @Operation(summary = "Изменить статус POI")

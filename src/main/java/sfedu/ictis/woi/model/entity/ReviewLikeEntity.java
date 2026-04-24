@@ -11,7 +11,6 @@ import sfedu.ictis.woi.model.entity.id.ReviewLikeId;
 @Setter
 @IdClass(ReviewLikeId.class)
 public class ReviewLikeEntity {
-
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "review_id")
