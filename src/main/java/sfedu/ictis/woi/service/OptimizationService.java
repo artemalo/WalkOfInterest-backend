@@ -216,7 +216,7 @@ public class OptimizationService {
     private double minDistanceToRoute(PoiDTO poi, List<PointDTO> routePoints) {
         double minDistance = Double.MAX_VALUE;
         for (PointDTO pt : routePoints) {
-            double dist = haversine(poi.getLat(), poi.getLon(), pt.lat(), pt.lon());
+            double dist = haversine(poi.getLat(), poi.getLon(), pt.getLat(), pt.getLon());
             if (dist < minDistance) {
                 minDistance = dist;
             }

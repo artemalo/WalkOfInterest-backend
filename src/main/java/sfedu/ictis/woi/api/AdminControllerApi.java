@@ -13,10 +13,11 @@ import java.util.List;
 
 @Tag(name = "Admin", description = "Админ панель POI")
 @ApiResponses({
+        @ApiResponse(responseCode = "403", description = "Недостаточно прав"),
         @ApiResponse(responseCode = "503", description = "Проблемы с сервисом")
 })
 public interface AdminControllerApi {
-    @Operation(summary = "Получить POI по статусу (с пагинацией)")
+    @Operation(summary = "Список POI с фильтрацией по статусу и пагинацией")
     @GetMapping
     List<PoiAdminDTO> getPoisByStatus(
             @Parameter(description = "Статус точек", example = "PENDING")
@@ -36,6 +37,8 @@ public interface AdminControllerApi {
     @PatchMapping("/{id}/status")
     void updatePoiStatus(
             @PathVariable Long id,
+
+            @Parameter(description = "Новый статус точки")
             @RequestParam PoiStatus request
     );
 }

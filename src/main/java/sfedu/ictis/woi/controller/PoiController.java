@@ -2,9 +2,7 @@ package sfedu.ictis.woi.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.api.PoiControllerApi;
 import sfedu.ictis.woi.model.dto.PoiAddDTO;
 import sfedu.ictis.woi.model.dto.PoiCardDTO;
@@ -19,22 +17,32 @@ public class PoiController implements PoiControllerApi {
     private final PoiService poiService;
 
     @PostMapping
-    public PoiInfoDTO createPoi(@RequestBody PoiAddDTO poi) {
+    public PoiInfoDTO createPoi(
+            @RequestBody PoiAddDTO poi
+    ) {
         return poiService.createPoi(poi, SecurityContextHolder.getContext().getAuthentication());
     }
 
-    @Override
-    public PoiInfoDTO getPoiById(Long id) {
-        return null; // TODO: implement
+    @GetMapping("/{id}")
+    public PoiInfoDTO getPoiById(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "ru") String lang
+    ) {
+        return poiService.getPoiById(id, lang);
     }
 
-    @Override
-    public PoiInfoDTO updatePoi(Long id, PoiAddDTO poi) {
-        return null; // TODO: implement
+    @PutMapping("/{id}")
+    public PoiInfoDTO updatePoi(
+            @PathVariable Long id,
+            @RequestBody PoiAddDTO poi
+    ) {
+        return poiService.updatePoi(id, poi, SecurityContextHolder.getContext().getAuthentication());
     }
 
-    @Override
-    public List<PoiCardDTO> getUserPois() {
-        return null; // TODO: implement
+    @GetMapping("/my")
+    public List<PoiCardDTO> getUserPois(
+            @RequestParam(defaultValue = "ru") String lang
+    ) {
+        return poiService.getUserPois(SecurityContextHolder.getContext().getAuthentication(), lang);
     }
 }

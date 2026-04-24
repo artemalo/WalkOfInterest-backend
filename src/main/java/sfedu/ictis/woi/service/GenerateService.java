@@ -32,8 +32,8 @@ public class GenerateService {
             throw new IllegalStateException("Invalid time");
         }
 
-        double midLat = (request.getP1().lat() + request.getP2().lat()) / 2;
-        double midLon = (request.getP1().lon() + request.getP2().lon()) / 2;
+        double midLat = (request.getP1().getLat() + request.getP2().getLon()) / 2;
+        double midLon = (request.getP1().getLat() + request.getP2().getLon()) / 2;
 
         String isochroneWkt = safeFetchIsochrone(midLat, midLon, request.getMaxTime() * 60);
 

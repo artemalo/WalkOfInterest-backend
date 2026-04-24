@@ -188,7 +188,7 @@ public class GraphHopperClient implements GraphHopperRequest {
                 .uri(uriBuilder -> {
                     var uri = uriBuilder.path("/route");
                     for (PointDTO p : points) {
-                        uri.queryParam("point", p.lat() + "," + p.lon());
+                        uri.queryParam("point", p.getLat() + "," + p.getLon());
                     }
                     return uri.queryParam("profile", "foot")
                             .queryParam("optimize", String.valueOf(optimize))

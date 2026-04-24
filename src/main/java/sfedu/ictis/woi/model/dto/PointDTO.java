@@ -1,6 +1,13 @@
 package sfedu.ictis.woi.model.dto;
 
-public record PointDTO(
-        Double lat,
-        Double lon
-){}
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class PointDTO {
+    private Double lat;
+    private Double lon;
+}

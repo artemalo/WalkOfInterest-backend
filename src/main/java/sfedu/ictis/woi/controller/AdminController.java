@@ -18,7 +18,6 @@ import java.util.List;
 public class AdminController implements AdminControllerApi {
     private final PoiService poiService;
 
-    @Override
     @GetMapping
     public List<PoiAdminDTO> getPoisByStatus(
             @RequestParam PoiStatus request,
@@ -29,7 +28,6 @@ public class AdminController implements AdminControllerApi {
         return poiService.getPoisByStatus(request, PageRequest.of(page, size), lang);
     }
 
-    @Override
     @PatchMapping("/{id}/status")
     public void updatePoiStatus(
             @PathVariable Long id,

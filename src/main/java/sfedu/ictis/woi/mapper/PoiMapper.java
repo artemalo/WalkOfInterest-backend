@@ -1,58 +1,133 @@
 package sfedu.ictis.woi.mapper;
 
 import lombok.extern.slf4j.Slf4j;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.Point;
 import sfedu.ictis.woi.exception.PoiNotPointException;
-import sfedu.ictis.woi.model.dto.PoiDTO;
-import sfedu.ictis.woi.model.dto.TagDTO;
+import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.model.entity.PoiEntity;
 import sfedu.ictis.woi.model.entity.PoisLanguesEntity;
+import sfedu.ictis.woi.model.entity.SubcategoryEntity;
+import sfedu.ictis.woi.model.entity.UserEntity;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class PoiMapper {
-    public static PoiDTO mapToDTO(PoiEntity entity, String targetLang) {
-        PoiDTO dto = new PoiDTO();
+    public static PoiInfoDTO mapToInfoDTO(PoiEntity entity, String targetLang) {
+        PoiInfoDTO dto = new PoiInfoDTO();
         dto.setId(entity.getId());
-
-        if (entity.getGeom() instanceof org.locationtech.jts.geom.Point point) {
-            dto.setLat(point.getY());
-            dto.setLon(point.getX());
-        } else {
-            log.warn("POI с ID {} не является точкой", entity.getId());
-            throw new PoiNotPointException("POI не является Point");
-        }
-
+        dto.setPoint(extractPoint(entity.getGeom(), entity.getId()));
         dto.setStatus(entity.getStatus());
-        dto.setUserGenerated(entity.isUserGenerated());
+
+        applyLocale(entity, targetLang, dto);
 
         if (entity.getSubcategories() != null) {
-            List<TagDTO> tags = entity.getSubcategories().stream()
-                    .map(sub -> new TagDTO(sub.getId(), sub.getWeight()))
-                    .collect(Collectors.toList());
-            dto.setTags(tags);
+            dto.setTags(entity.getSubcategories().stream()
+                    .map(PoiMapper::mapToTagNameDTO)
+                    .collect(Collectors.toList()));
         }
+        return dto;
+    }
+
+    public static PoiAdminDTO mapToAdminDTO(PoiEntity entity, String targetLang) {
+        PoiAdminDTO dto = new PoiAdminDTO();
+        dto.setId(entity.getId());
+        dto.setPoint(extractPoint(entity.getGeom(), entity.getId()));
+        dto.setStatus(entity.getStatus());
+        dto.setCreatedUser(mapToUserDTO(entity.getUser()));
+
+        applyLocale(entity, targetLang, dto);
 
         if (entity.getLocales() != null && !entity.getLocales().isEmpty()) {
-            PoisLanguesEntity matchedLocale = entity.getLocales().stream()
-                    .filter(l -> l.getLangue().equals(targetLang))
-                    .findFirst()
-                    .orElse(entity.getLocales().getFirst());
-
-            dto.setName(matchedLocale.getPoiName());
-            dto.setDescription(matchedLocale.getPoiDescription());
-            dto.setLang(matchedLocale.getLangue());
+            dto.setLang(getMatchedLocale(entity.getLocales(), targetLang).getLangue());
         }
 
-        if (entity.getRating() != null) {
-            dto.setRate(entity.getRating().getAvgRate());
-            dto.setCount(entity.getRating().getCountRate());
-        } else {
-            dto.setRate(0.0);
-            dto.setCount(0);
+        if (entity.getSubcategories() != null) {
+            dto.setTags(entity.getSubcategories().stream()
+                    .map(PoiMapper::mapToTagNameDTO)
+                    .collect(Collectors.toList()));
         }
-
         return dto;
+    }
+
+    public static PoiCardDTO mapToCardDTO(PoiEntity entity, String targetLang) {
+        PoiCardDTO dto = new PoiCardDTO();
+        dto.setId(entity.getId());
+
+        PoisLanguesEntity locale = getMatchedLocale(entity.getLocales(), targetLang);
+        if (locale != null) {
+            dto.setName(locale.getPoiName());
+        }
+
+        if (entity.getSubcategories() != null && !entity.getSubcategories().isEmpty()) {
+            SubcategoryEntity sub = entity.getSubcategories().iterator().next();
+            dto.setSubcategoryName(sub.getName());
+            if (sub.getCategory() != null) {
+                dto.setCategoryName(sub.getCategory().getName());
+            }
+        }
+        return dto;
+    }
+
+
+
+    private static PointDTO extractPoint(Geometry geom, Long poiId) {
+        if (geom instanceof Point point) {
+            return new PointDTO(point.getY(), point.getX());
+        }
+        log.warn("POI с ID {} не является точкой", poiId);
+        throw new PoiNotPointException("POI не является Point");
+    }
+
+    private static PoisLanguesEntity getMatchedLocale(List<PoisLanguesEntity> locales, String targetLang) {
+        if (locales == null || locales.isEmpty()) return null;
+
+        for (PoisLanguesEntity l : locales) {
+            if (l.getLangue().equals(targetLang)) return l;
+        }
+
+        for (PoisLanguesEntity l : locales) {
+            if (l.getLangue().equals("default")) return l;
+        }
+
+        for (PoisLanguesEntity l : locales) {
+            if (l.getLangue().equals("en")) return l;
+        }
+
+        return locales.getFirst();
+    }
+
+    private static void applyLocale(PoiEntity entity, String targetLang, Object dto) {
+        PoisLanguesEntity locale = getMatchedLocale(entity.getLocales(), targetLang);
+        if (locale != null) {
+            if (dto instanceof PoiInfoDTO info) {
+                info.setName(locale.getPoiName());
+                info.setDescription(locale.getPoiDescription());
+            } else if (dto instanceof PoiAdminDTO admin) {
+                admin.setName(locale.getPoiName());
+                admin.setDescription(locale.getPoiDescription());
+            }
+        }
+    }
+
+    private static TagNameDTO mapToTagNameDTO(SubcategoryEntity sub) {
+        return new TagNameDTO(
+                sub.getCategory() != null ? sub.getCategory().getId() : null,
+                sub.getName(),
+                new TagDTO(sub.getId(), sub.getWeight())
+        );
+    }
+
+    private static UserDTO mapToUserDTO(UserEntity user) {
+        if (user == null) return null;
+        return new UserDTO(
+                user.getId(),
+                user.getUsername(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getCreatedAt()
+        );
     }
 }

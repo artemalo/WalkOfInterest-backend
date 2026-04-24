@@ -7,11 +7,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import sfedu.ictis.woi.exception.AccessDeniedException;
 import sfedu.ictis.woi.exception.InvalidCredentialsException;
 import sfedu.ictis.woi.exception.PoiAlreadyExistsException;
 import sfedu.ictis.woi.exception.ResourceNotFoundException;
 import sfedu.ictis.woi.mapper.PoiMapper;
-import sfedu.ictis.woi.model.dto.PoiDTO;
+import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.model.entity.*;
 import sfedu.ictis.woi.repository.PoiRepository;
 import sfedu.ictis.woi.repository.SubcategoryRepository;
@@ -30,53 +31,77 @@ public class PoiService {
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
+
+    public PoiInfoDTO getPoiById(Long id, String lang) {
+        PoiEntity entity = poiRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
+        return PoiMapper.mapToInfoDTO(entity, lang);
+    }
+
+    public List<PoiCardDTO> getUserPois(Authentication authentication, String lang) {
+        UserEntity user = getAuthenticatedUser(authentication);
+        List<PoiEntity> userPois = poiRepository.findAllByUser(user);
+
+        return userPois.stream()
+                .map(entity -> PoiMapper.mapToCardDTO(entity, lang))
+                .collect(Collectors.toList());
+    }
+
     @Transactional
-    public PoiDTO createPoi(PoiDTO poiDTO, Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
-            throw new InvalidCredentialsException();
+    public PoiInfoDTO createPoi(PoiAddDTO dto, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
+
+        if (dto.getPoint() == null || dto.getPoint().getLat() == null || dto.getPoint().getLon() == null) {
+            throw new IllegalArgumentException("Координаты обязательны");
         }
 
-        UserEntity user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
-
-        if (poiRepository.existsNearby(poiDTO.getLon(), poiDTO.getLat())) {
-            throw new PoiAlreadyExistsException("Точка уже существует в этой локации или слишком близко (менее 5 метров)");
+        if (poiRepository.existsNearby(dto.getPoint().getLon(), dto.getPoint().getLat())) {
+            throw new PoiAlreadyExistsException("Точка уже существует в этой локации или слишком близко");
         }
 
         PoiEntity entity = new PoiEntity();
-
-        Point point = geometryFactory.createPoint(new Coordinate(poiDTO.getLon(), poiDTO.getLat()));
+        Point point = geometryFactory.createPoint(new Coordinate(dto.getPoint().getLon(), dto.getPoint().getLat()));
         entity.setGeom(point);
         entity.setUser(user);
         entity.setStatus(PoiStatus.PENDING);
 
-        if (poiDTO.getTags() != null && !poiDTO.getTags().isEmpty()) {
-            Set<SubcategoryEntity> subcategories = poiDTO.getTags().stream()
-                    .map(tag -> subcategoryRepository.findById(tag.getSubcategoryId())
-                            .orElseThrow(() -> new ResourceNotFoundException("Подкатегория не найдена: " + tag.getSubcategoryId())))
-                    .collect(Collectors.toSet());
-            entity.setSubcategories(subcategories);
-        }
-
-        if (poiDTO.getName() != null || poiDTO.getDescription() != null) {
-            PoisLanguesEntity locale = new PoisLanguesEntity();
-            locale.setPoi(entity);
-
-            locale.setLangue(poiDTO.getLang() != null ? poiDTO.getLang() : "default");
-            locale.setPoiName(poiDTO.getName());
-            locale.setPoiDescription(poiDTO.getDescription());
-
-            entity.getLocales().add(locale);
-        }
+        updateSubcategories(entity, dto.getSubcategoriesId());
+        addOrUpdateLocale(entity, dto.getLang(), dto.getName(), dto.getDescription());
 
         PoiEntity savedEntity = poiRepository.save(entity);
-        return PoiMapper.mapToDTO(savedEntity, poiDTO.getLang());
+        return PoiMapper.mapToInfoDTO(savedEntity, dto.getLang());
     }
 
-    public List<PoiDTO> getPoisByStatus(PoiStatus status, Pageable pageable, String targetLang) {
+    @Transactional
+    public PoiInfoDTO updatePoi(Long id, PoiAddDTO dto, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
+        PoiEntity entity = poiRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
+
+         if (!entity.getUser().getId().equals(user.getId())) {
+             throw new AccessDeniedException("Вы не можете редактировать чужую точку");
+         }
+
+        if (dto.getPoint() != null && dto.getPoint().getLat() != null && dto.getPoint().getLon() != null) {
+            Point point = geometryFactory.createPoint(new Coordinate(dto.getPoint().getLon(), dto.getPoint().getLat()));
+            entity.setGeom(point);
+        }
+
+        updateSubcategories(entity, dto.getSubcategoriesId());
+        addOrUpdateLocale(entity, dto.getLang(), dto.getName(), dto.getDescription());
+
+        entity.setStatus(PoiStatus.PENDING);
+
+        PoiEntity savedEntity = poiRepository.save(entity);
+        return PoiMapper.mapToInfoDTO(savedEntity, dto.getLang());
+    }
+
+
+
+    public List<PoiAdminDTO> getPoisByStatus(PoiStatus status, Pageable pageable, String targetLang) {
         Page<PoiEntity> poiPage = poiRepository.findAllByStatus(status, pageable);
         return poiPage.getContent().stream()
-                .map(entity -> PoiMapper.mapToDTO(entity, targetLang != null ? targetLang : "default"))
+                .map(entity -> PoiMapper.mapToAdminDTO(entity, targetLang))
                 .collect(Collectors.toList());
     }
 
@@ -86,10 +111,50 @@ public class PoiService {
                 .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
 
         if (status == PoiStatus.REJECTED) {
-            poiRepository.delete(entity);
+            poiRepository.delete(entity); // TODO: test
         } else {
             entity.setStatus(status);
             poiRepository.save(entity);
         }
+    }
+
+
+
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
+            throw new InvalidCredentialsException();
+        }
+        return userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+    }
+
+    private void updateSubcategories(PoiEntity entity, List<Integer> subcategoryIds) {
+        if (subcategoryIds != null && !subcategoryIds.isEmpty()) {
+            Set<SubcategoryEntity> subcategories = subcategoryIds.stream()
+                    .map(id -> subcategoryRepository.findById(id)
+                            .orElseThrow(() -> new ResourceNotFoundException("Подкатегория не найдена: " + id)))
+                    .collect(Collectors.toSet());
+            entity.setSubcategories(subcategories);
+        }
+    }
+
+    private void addOrUpdateLocale(PoiEntity entity, String lang, String name, String description) {
+        if (name == null && description == null) return;
+
+        String targetLang = lang != null ? lang : "default";
+
+        PoisLanguesEntity locale = entity.getLocales().stream()
+                .filter(l -> l.getLangue().equals(targetLang))
+                .findFirst()
+                .orElseGet(() -> {
+                    PoisLanguesEntity newLocale = new PoisLanguesEntity();
+                    newLocale.setPoi(entity);
+                    newLocale.setLangue(targetLang);
+                    entity.getLocales().add(newLocale);
+                    return newLocale;
+                });
+
+        if (name != null) locale.setPoiName(name);
+        if (description != null) locale.setPoiDescription(description);
     }
 }
