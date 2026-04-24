@@ -1,5 +1,7 @@
 package sfedu.ictis.woi.model.entity;
 
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.locationtech.jts.geom.Geometry;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -15,6 +17,8 @@ import java.util.Set;
 @Table(name = "pois")
 @Getter
 @Setter
+@SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class PoiEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -56,6 +60,9 @@ public class PoiEntity {
 
     @OneToOne(mappedBy = "poi", cascade = CascadeType.ALL)
     private PoiRatingsEntity rating;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
 
 

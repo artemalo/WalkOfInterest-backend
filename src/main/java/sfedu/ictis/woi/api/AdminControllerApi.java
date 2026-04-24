@@ -30,7 +30,4 @@ public interface AdminControllerApi {
             @PathVariable Long id,
             @RequestBody UpdateStatusRequest request
     );
-
-    @DeleteMapping("/{id}") // TODO если REJECTED, вообще лушче в updatePoiStats
-    void deletePoi(@PathVariable Long id);
 }

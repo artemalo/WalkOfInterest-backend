@@ -88,7 +88,11 @@ public class PoiService {
         PoiEntity entity = poiRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
 
-        entity.setStatus(status);
-        poiRepository.save(entity);
+        if (status == PoiStatus.REJECTED) {
+            poiRepository.delete(entity);
+        } else {
+            entity.setStatus(status);
+            poiRepository.save(entity);
+        }
     }
 }

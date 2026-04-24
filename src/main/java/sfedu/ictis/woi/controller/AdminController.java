@@ -35,9 +35,4 @@ public class AdminController implements AdminControllerApi {
     ) {
         poiService.updatePoiStatus(id, request.getStatus());
     }
-
-    @Override
-    public void deletePoi(Long id) {
-        // TODO: implement logic
-    }
 }
