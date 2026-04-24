@@ -5,7 +5,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
-import sfedu.ictis.woi.model.dto.PoiDTO;
+import sfedu.ictis.woi.model.dto.PoiAddDTO;
+import sfedu.ictis.woi.model.dto.PoiCardDTO;
+import sfedu.ictis.woi.model.dto.PoiInfoDTO;
 
 import java.util.List;
 
@@ -17,16 +19,16 @@ import java.util.List;
 public interface PoiControllerApi {
     @Operation(summary = "Получить POI по id")
     @GetMapping("/{id}")
-    PoiDTO getPoiById(@PathVariable Long id);
+    PoiInfoDTO getPoiById(@PathVariable Long id);
 
     @Operation(summary = "Обновить POI (пользовательский)") // TODO может только пользователь владеющий poi
     @PutMapping("/{id}")
-    PoiDTO updatePoi(@PathVariable Long id, @RequestBody PoiDTO poi);
+    PoiInfoDTO updatePoi(@PathVariable Long id, @RequestBody PoiAddDTO poi);
 
     @Operation(summary = "Получить POI текущего пользователя")
     @GetMapping("/my")
-    List<PoiDTO> getUserPois();
+    List<PoiCardDTO> getUserPois();
 
     @PostMapping
-    PoiDTO createPoi(@RequestBody PoiDTO poi);
+    PoiInfoDTO createPoi(@RequestBody PoiAddDTO poi);
 }

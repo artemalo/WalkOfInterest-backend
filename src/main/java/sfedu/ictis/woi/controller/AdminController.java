@@ -5,7 +5,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.api.AdminControllerApi;
-import sfedu.ictis.woi.model.dto.PoiDTO;
+import sfedu.ictis.woi.model.dto.PoiAdminDTO;
 import sfedu.ictis.woi.model.entity.PoiStatus;
 import sfedu.ictis.woi.service.PoiService;
 
@@ -20,7 +20,7 @@ public class AdminController implements AdminControllerApi {
 
     @Override
     @GetMapping
-    public List<PoiDTO> getPoisByStatus(
+    public List<PoiAdminDTO> getPoisByStatus(
             @RequestParam PoiStatus request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,

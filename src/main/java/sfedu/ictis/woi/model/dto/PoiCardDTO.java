@@ -7,7 +7,9 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TagDTO {
-    private Integer subcategoryId;
-    private Double weight;
+public class PoiCardDTO {
+    private Long id;
+    private String name;
+    private String categoryName;
+    private String subcategoryName;
 }

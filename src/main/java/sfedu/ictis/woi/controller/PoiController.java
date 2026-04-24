@@ -6,7 +6,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import sfedu.ictis.woi.api.PoiControllerApi;
-import sfedu.ictis.woi.model.dto.PoiDTO;
+import sfedu.ictis.woi.model.dto.PoiAddDTO;
+import sfedu.ictis.woi.model.dto.PoiCardDTO;
+import sfedu.ictis.woi.model.dto.PoiInfoDTO;
 import sfedu.ictis.woi.service.PoiService;
 
 import java.util.List;
@@ -17,22 +19,22 @@ public class PoiController implements PoiControllerApi {
     private final PoiService poiService;
 
     @PostMapping
-    public PoiDTO createPoi(@RequestBody PoiDTO poi) {
+    public PoiInfoDTO createPoi(@RequestBody PoiAddDTO poi) {
         return poiService.createPoi(poi, SecurityContextHolder.getContext().getAuthentication());
     }
 
     @Override
-    public PoiDTO getPoiById(Long id) {
+    public PoiInfoDTO getPoiById(Long id) {
         return null; // TODO: implement
     }
 
     @Override
-    public PoiDTO updatePoi(Long id, PoiDTO poi) {
+    public PoiInfoDTO updatePoi(Long id, PoiAddDTO poi) {
         return null; // TODO: implement
     }
 
     @Override
-    public List<PoiDTO> getUserPois() {
+    public List<PoiCardDTO> getUserPois() {
         return null; // TODO: implement
     }
 }

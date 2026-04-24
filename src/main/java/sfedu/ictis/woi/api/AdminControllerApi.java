@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
-import sfedu.ictis.woi.model.dto.PoiDTO;
+import sfedu.ictis.woi.model.dto.PoiAdminDTO;
 import sfedu.ictis.woi.model.entity.PoiStatus;
 
 import java.util.List;
@@ -18,7 +18,7 @@ import java.util.List;
 public interface AdminControllerApi {
     @Operation(summary = "Получить POI по статусу (с пагинацией)")
     @GetMapping
-    List<PoiDTO> getPoisByStatus(
+    List<PoiAdminDTO> getPoisByStatus(
             @Parameter(description = "Статус точек", example = "PENDING")
             @RequestParam PoiStatus request,
 
