@@ -1,5 +1,6 @@
 package sfedu.ictis.woi.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import sfedu.ictis.woi.config.OptimizerConfig;
 import sfedu.ictis.woi.infrastructure.client.GraphHopperClient;
@@ -11,6 +12,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class OptimizationService {
     private static final double R = 6371000;
     // person >30-40%, чем расстояние по прямой
@@ -18,14 +20,8 @@ public class OptimizationService {
     private static final double WALKING_SPEED_M_PER_MIN = 80.0; // ~4.8 км/ч
 
     private final OptimizerConfig config;
-    private final ScoreCalculator scoreCalculator;
+    private final ScoreCalculatorService scoreCalculatorService;
     private final GraphHopperClient ghClient;
-
-    public OptimizationService(OptimizerConfig config, ScoreCalculator scoreCalculator, GraphHopperClient ghClient) {
-        this.config = config;
-        this.scoreCalculator = scoreCalculator;
-        this.ghClient = ghClient;
-    }
 
     public void optimize(SearchResponse response, SearchRequestDTO request) {
         RouteResponse baseRoute = ghClient.getFromToRoute(request.getP1(), request.getP2());
@@ -141,10 +137,10 @@ public class OptimizationService {
                     } else {
                         proximityBonus = Math.max(0, 1000.0 / distToRoute);
                     }
-                    poi.setScore(scoreCalculator.calculatePoiScore(poi, proximityBonus));
+                    poi.setScore(scoreCalculatorService.calculatePoiScore(poi, proximityBonus));
                 }
                 sub.getPois().sort(Comparator.comparing(PoiDTO::getScore).reversed());
-                sub.setScore(scoreCalculator.calculateSubcategoryScore(sub));
+                sub.setScore(scoreCalculatorService.calculateSubcategoryScore(sub));
             }
             cat.getSubcategories().sort(Comparator.comparing(SubCategoryDTO::getScore).reversed());
         }

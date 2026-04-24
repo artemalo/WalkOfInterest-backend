@@ -1,5 +1,6 @@
 package sfedu.ictis.woi.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -9,14 +10,10 @@ import sfedu.ictis.woi.model.dto.PoiDTO;
 import sfedu.ictis.woi.model.dto.SubCategoryDTO;
 
 @Service
-public class ScoreCalculator {
-
+@RequiredArgsConstructor
+public class ScoreCalculatorService {
     private final OptimizerConfig config;
     private final ExpressionParser parser = new SpelExpressionParser();
-
-    public ScoreCalculator(OptimizerConfig config) {
-        this.config = config;
-    }
 
     /**
      * Считаем баллы для POI

@@ -11,32 +11,29 @@ import sfedu.ictis.woi.model.SearchRequest;
 import sfedu.ictis.woi.model.SearchResponse;
 import sfedu.ictis.woi.model.dto.PointDTO;
 import sfedu.ictis.woi.service.OptimizationService;
-import sfedu.ictis.woi.service.PoiService;
-import sfedu.ictis.woi.service.SearchService;
+import sfedu.ictis.woi.service.GenerateService;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/poi/generate")
 public class GenerateController implements GenerateControllerApi {
-    private final PoiService poiService;
-    private final SearchService searchService;
+    private final GenerateService generateService;
     private final OptimizationService optimizationService;
 
-    public GenerateController(PoiService orchestratorService, SearchService searchService, OptimizationService optimizationService) {
-        this.poiService = orchestratorService;
-        this.searchService = searchService;
+    public GenerateController(GenerateService generateService, OptimizationService optimizationService) {
+        this.generateService = generateService;
         this.optimizationService = optimizationService;
     }
 
     @PostMapping("/route")
     public ResponseEntity<RouteResponse> getFromToRoute(@RequestBody RouteFromToRequest request) {
-        return ResponseEntity.ok(poiService.getRoute(request.getP1(), request.getP2()));
+        return ResponseEntity.ok(generateService.getRoute(request.getP1(), request.getP2()));
     }
 
     @PostMapping("/search")
     public ResponseEntity<SearchResponse> search(@Valid @RequestBody SearchRequest request) {
-        SearchResponse response = searchService.findAllPois(request);
+        SearchResponse response = generateService.findAllPois(request);
 
         optimizationService.optimize(response, SearchRequestMapper.toDTO(request));
 
