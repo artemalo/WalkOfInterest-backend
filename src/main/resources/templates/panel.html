@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <meta charset="UTF-8">
+        <title>Панель администратора - POI</title>
+
+        <link rel="stylesheet" href="/css/style.css">
+        <link rel="stylesheet" href="/css/admin.css">
+    </head>
+    <body>
+        <header>
+            <nav>
+                <div class="username" th:text="${#authentication.name}">Админ</div>
+                <ul>
+                    <li><a href="/panel" class="active">Панель администратора</a></li>
+                    <li><a href="javascript:void(0)" onclick="logout()">Выйти</a></li>
+                </ul>
+            </nav>
+        </header>
+        <main>
+            <h2>Управление POI</h2>
+
+            <div class="tabs">
+                <button class="tab-btn active" data-status="PENDING">В ожидании</button>
+                <button class="tab-btn" data-status="APPROVED">Одобрено</button>
+                <button class="tab-btn" data-status="REJECTED">Отклонено</button>
+            </div>
+
+            <div id="poi-container" class="poi-list">
+            </div>
+
+            <div class="pagination-controls">
+                <button id="prev-btn" onclick="changePage(-1)">← Назад</button>
+                <span id="page-info">Страница: <b id="current-page-num">1</b></span>
+                <button id="next-btn" onclick="changePage(1)">Вперед →</button>
+            </div>
+        </main>
+
+        <script th:inline="javascript">
+            const token = /*[[${jwtToken}]]*/ 'default_token';
+            localStorage.setItem('accessToken', token);
+        </script>
+
+        <script src="/js/admin.js"></script>
+    </body>
+</html>

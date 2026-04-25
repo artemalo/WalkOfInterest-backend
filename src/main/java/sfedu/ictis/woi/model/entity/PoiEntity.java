@@ -17,8 +17,8 @@ import java.util.Set;
 @Table(name = "pois")
 @Getter
 @Setter
-@SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
+@SQLDelete(sql = "UPDATE pois SET deleted_at = CURRENT_TIMESTAMP, status = 'REJECTED' WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL") // TODO: если нужно показывать админам все poi - проблема
 public class PoiEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -2,6 +2,7 @@ package sfedu.ictis.woi.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PoiService {
@@ -112,10 +114,12 @@ public class PoiService {
 
         if (status == PoiStatus.REJECTED) {
             poiRepository.delete(entity); // TODO: test
+            log.warn("\t[DELETED] poi: id={}, name={}", entity.getId(), entity.getLastUpdate());
         } else {
             entity.setStatus(status);
             poiRepository.save(entity);
         }
+        log.warn("[{}] poi_id: {}",status, entity.getId());
     }
 
 

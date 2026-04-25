@@ -16,7 +16,7 @@ import sfedu.ictis.woi.service.GenerateService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/poi/generate")
+@RequestMapping("/api/poi/generate")
 public class GenerateController implements GenerateControllerApi {
     private final GenerateService generateService;
     private final OptimizationService optimizationService;

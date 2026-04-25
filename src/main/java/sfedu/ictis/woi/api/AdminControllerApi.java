@@ -16,6 +16,7 @@ import java.util.List;
         @ApiResponse(responseCode = "403", description = "Недостаточно прав"),
         @ApiResponse(responseCode = "503", description = "Проблемы с сервисом")
 })
+@RequestMapping("/api/admin/pois")
 public interface AdminControllerApi {
     @Operation(summary = "Список POI с фильтрацией по статусу и пагинацией")
     @GetMapping

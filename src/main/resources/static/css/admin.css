@@ -1,0 +1,115 @@
+.tabs {
+    display: flex;
+    gap: 1em;
+    margin-bottom: 2em;
+}
+
+.tab-btn {
+    background-color: hsla(0, 0%, 0%, 0.4);
+    color: #cfcfcf;
+    font-size: 1.1em;
+    padding: 0.5em 1.5em;
+}
+
+.tab-btn.active {
+    background-color: #5C6171;
+    color: white;
+    box-shadow: 0 0 10px rgba(255,255,255,0.1);
+}
+
+
+.poi-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
+.poi-item {
+    background-color: hsla(0, 0%, 0%, 0.4);
+    border-radius: 1em;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+
+.poi-header {
+    display: flex;
+    align-items: center;
+    padding: 1em;
+    gap: 1em;
+}
+
+.poi-photo-placeholder {
+    width: 60px;
+    height: 60px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 0.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    color: #9b9b9b;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.poi-info {
+    flex-grow: 1;
+}
+
+.poi-info h3 {
+    margin: 0 0 0.2em 0;
+    font-size: 1.2em;
+}
+
+.poi-info p {
+    margin: 0;
+    font-size: 0.9em;
+    color: #cfcfcf;
+}
+
+.poi-actions {
+    display: flex;
+    gap: 0.5em;
+    align-items: center;
+}
+
+.expand-btn {
+    background-color: transparent;
+    font-size: 1.2em;
+    padding: 0.2em 0.5em;
+    cursor: pointer;
+}
+
+
+.poi-details {
+    padding: 0 1em 1em 1em;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: none;
+    color: #cfcfcf;
+    animation: fadeIn 0.3s;
+}
+
+.poi-details p {
+    margin: 0.5em 0;
+}
+
+.tags-container {
+    display: flex;
+    gap: 0.5em;
+    flex-wrap: wrap;
+    margin-top: 0.5em;
+}
+
+.tag-badge {
+    background-color: rgba(255, 255, 255, 0.15);
+    padding: 0.2em 0.6em;
+    border-radius: 1em;
+    font-size: 0.8em;
+    color: wheat;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}

@@ -13,7 +13,7 @@ import sfedu.ictis.woi.service.RouteService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/poi/route")
+@RequestMapping("/api/poi/route")
 public class RouteController implements RouteControllerApi {
     private final RouteService routeService;
 

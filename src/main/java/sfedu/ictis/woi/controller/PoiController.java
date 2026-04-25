@@ -13,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/pois")
 public class PoiController implements PoiControllerApi {
     private final PoiService poiService;
 

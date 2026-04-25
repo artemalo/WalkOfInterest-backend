@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import sfedu.ictis.woi.model.dto.PointDTO;
 import sfedu.ictis.woi.model.dto.RouteDTO;
 
@@ -15,6 +16,7 @@ import java.util.List;
 @ApiResponses({
         @ApiResponse(responseCode = "503", description = "Проблемы с сервисом")
 })
+@RequestMapping("/api/poi/route")
 public interface RouteControllerApi {
     @Operation(
         summary = "Получить маршрут",

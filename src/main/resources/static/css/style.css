@@ -1,0 +1,161 @@
+header {
+	padding: 0.2em 10em;
+}
+
+body {
+	font-family: 'Inter', sans-serif;
+	margin: 0;
+	background-color: #222222;
+}
+
+main {
+	padding: 1em 15em;
+}
+
+a {
+	color: #4a4a4a;
+	text-decoration: none;
+}
+
+a:active {
+	color: #9b9b9b;
+	background-color: none;
+}
+
+label, p, h1, h2, h3 {
+	color: white;
+}
+
+li {
+  color: wheat;
+}
+
+button {
+	padding: 0.5em;
+	border: none;
+	border-radius: 0.5em;
+	color: white;
+	background-color: #5C6171;
+}
+button:hover {
+  filter: brightness(0.8);
+}
+.red {
+	background: #8D7373;
+}
+.green {
+	background: #738D74;
+}
+.wheat {
+  background: wheat;
+}
+
+
+.products {
+  display: ruby;
+}
+
+.item {
+	min-width: 20em;
+	padding: 1em;
+  margin-bottom: 1em;
+	border-radius: 2em;
+	background-color: hsla(0, 0%, 0%, 0.4);
+}
+.item-title {
+	text-align: center;
+	margin: 0;
+}
+.item-text {
+	margin: 1em;
+	white-space: pre-line;
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+.item-info {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+
+	padding-bottom: 10px;
+	border-bottom: 1px solid #ccc;
+	margin-bottom: 10px;
+}
+.item-content {
+	padding-bottom: 10px;
+	border-bottom: 1px solid #ccc;
+	margin-bottom: 10px;
+}
+.item-info p, .item-info h3 {
+	width: 80%;
+	margin: 0;
+}
+
+
+
+
+
+
+
+
+
+header {
+  padding: 0.5em 10em;
+  background-color: rgba(0, 0, 0, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+nav ul {
+  display: flex;
+  align-items: center;
+  gap: 1.5em;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+nav .username {
+  padding: 0.4em 0 0.8em;
+  margin-right: auto;
+  font-weight: 600;
+  color: wheat;
+  opacity: 0.9;
+}
+
+
+nav a {
+  color: #cfcfcf;
+  padding: 0.4em 0.8em;
+  border-radius: 0.6em;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+
+nav a:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+nav a.active {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+
+@media (max-width: 1200px) {
+  header {
+    padding: 0.5em 5em;
+  }
+}
+
+@media (max-width: 768px) {
+  header {
+    padding: 0.5em 1em;
+  }
+
+  nav ul {
+    gap: 0.8em;
+    flex-wrap: wrap;
+  }
+}
