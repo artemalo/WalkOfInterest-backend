@@ -15,7 +15,7 @@ import sfedu.ictis.woi.exception.ResourceNotFoundException;
 import sfedu.ictis.woi.mapper.PoiMapper;
 import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.model.entity.*;
-import sfedu.ictis.woi.repository.PoiRepository;
+import sfedu.ictis.woi.repository.PoiAdminRepository;
 import sfedu.ictis.woi.repository.SubcategoryRepository;
 import sfedu.ictis.woi.repository.UserRepository;
 
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PoiService {
-    private final PoiRepository poiRepository;
+    private final PoiAdminRepository poiRepository;
     private final UserRepository userRepository;
     private final SubcategoryRepository subcategoryRepository;
 
@@ -35,14 +35,14 @@ public class PoiService {
 
 
     public PoiInfoDTO getPoiById(Long id, String lang) {
-        PoiEntity entity = poiRepository.findById(id)
+        PoiAdminEntity entity = poiRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
         return PoiMapper.mapToInfoDTO(entity, lang);
     }
 
     public List<PoiCardDTO> getUserPois(Authentication authentication, String lang) {
         UserEntity user = getAuthenticatedUser(authentication);
-        List<PoiEntity> userPois = poiRepository.findAllByUser(user);
+        List<PoiAdminEntity> userPois = poiRepository.findAllByUser(user);
 
         return userPois.stream()
                 .map(entity -> PoiMapper.mapToCardDTO(entity, lang))
@@ -61,7 +61,7 @@ public class PoiService {
             throw new PoiAlreadyExistsException("Точка уже существует в этой локации или слишком близко");
         }
 
-        PoiEntity entity = new PoiEntity();
+        PoiAdminEntity entity = new PoiAdminEntity();
         Point point = geometryFactory.createPoint(new Coordinate(dto.getPoint().getLon(), dto.getPoint().getLat()));
         entity.setGeom(point);
         entity.setUser(user);
@@ -70,14 +70,14 @@ public class PoiService {
         updateSubcategories(entity, dto.getSubcategoriesId());
         addOrUpdateLocale(entity, dto.getLang(), dto.getName(), dto.getDescription());
 
-        PoiEntity savedEntity = poiRepository.save(entity);
+        PoiAdminEntity savedEntity = poiRepository.save(entity);
         return PoiMapper.mapToInfoDTO(savedEntity, dto.getLang());
     }
 
     @Transactional
     public PoiInfoDTO updatePoi(Long id, PoiAddDTO dto, Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);
-        PoiEntity entity = poiRepository.findById(id)
+        PoiAdminEntity entity = poiRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
 
          if (!entity.getUser().getId().equals(user.getId())) {
@@ -94,14 +94,14 @@ public class PoiService {
 
         entity.setStatus(PoiStatus.PENDING);
 
-        PoiEntity savedEntity = poiRepository.save(entity);
+        PoiAdminEntity savedEntity = poiRepository.save(entity);
         return PoiMapper.mapToInfoDTO(savedEntity, dto.getLang());
     }
 
 
 
     public List<PoiAdminDTO> getPoisByStatus(PoiStatus status, Pageable pageable, String targetLang) {
-        Page<PoiEntity> poiPage = poiRepository.findAllByStatus(status, pageable);
+        Page<PoiAdminEntity> poiPage = poiRepository.findAllByStatus(status, pageable);
         return poiPage.getContent().stream()
                 .map(entity -> PoiMapper.mapToAdminDTO(entity, targetLang))
                 .collect(Collectors.toList());
@@ -109,7 +109,7 @@ public class PoiService {
 
     @Transactional
     public void updatePoiStatus(Long id, PoiStatus status) {
-        PoiEntity entity = poiRepository.findById(id)
+        PoiAdminEntity entity = poiRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
 
         if (status == PoiStatus.REJECTED) {
@@ -132,7 +132,7 @@ public class PoiService {
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
     }
 
-    private void updateSubcategories(PoiEntity entity, List<Integer> subcategoryIds) {
+    private void updateSubcategories(PoiAdminEntity entity, List<Integer> subcategoryIds) {
         if (subcategoryIds != null && !subcategoryIds.isEmpty()) {
             Set<SubcategoryEntity> subcategories = subcategoryIds.stream()
                     .map(id -> subcategoryRepository.findById(id)
@@ -142,16 +142,16 @@ public class PoiService {
         }
     }
 
-    private void addOrUpdateLocale(PoiEntity entity, String lang, String name, String description) {
+    private void addOrUpdateLocale(PoiAdminEntity entity, String lang, String name, String description) {
         if (name == null && description == null) return;
 
         String targetLang = lang != null ? lang : "default";
 
-        PoisLanguesEntity locale = entity.getLocales().stream()
+        PoiAdminLanguesEntity locale = entity.getLocales().stream()
                 .filter(l -> l.getLangue().equals(targetLang))
                 .findFirst()
                 .orElseGet(() -> {
-                    PoisLanguesEntity newLocale = new PoisLanguesEntity();
+                    PoiAdminLanguesEntity newLocale = new PoiAdminLanguesEntity();
                     newLocale.setPoi(entity);
                     newLocale.setLangue(targetLang);
                     entity.getLocales().add(newLocale);

@@ -1,9 +1,10 @@
 package sfedu.ictis.woi.model.entity;
 
-import org.hibernate.annotations.Immutable;
+import org.hibernate.annotations.SQLDelete;
 import org.locationtech.jts.geom.Geometry;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -14,8 +15,9 @@ import java.util.Set;
 @Entity
 @Table(name = "pois")
 @Getter
-@Immutable
-public class PoiEntity {
+@Setter
+@SQLDelete(sql = "UPDATE pois SET deleted_at = CURRENT_TIMESTAMP, status = 'REJECTED' WHERE id = ?")
+public class PoiAdminEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

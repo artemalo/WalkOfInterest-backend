@@ -11,11 +11,11 @@ import sfedu.ictis.woi.model.entity.id.PoisLanguesId;
 @IdClass(PoisLanguesId.class)
 @Getter
 @Setter
-public class PoisLanguesEntity {
+public class PoiAdminLanguesEntity {
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "poi_id")
-    private PoiEntity poi;
+    private PoiAdminEntity poi;
 
     @Id
     @Column(name = "langue", length = 50)

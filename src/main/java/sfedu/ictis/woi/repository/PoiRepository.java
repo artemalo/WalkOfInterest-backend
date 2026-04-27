@@ -1,15 +1,10 @@
 package sfedu.ictis.woi.repository;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import sfedu.ictis.woi.model.entity.PoiEntity;
-import sfedu.ictis.woi.model.entity.PoiStatus;
-import sfedu.ictis.woi.model.entity.UserEntity;
 import sfedu.ictis.woi.projection.FlatPoiProjection;
 
 import java.util.List;
@@ -62,17 +57,4 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
             @Param("lang") String lang,
             @Param("isochroneWkt") String wkt
             );
-
-    Page<PoiEntity> findAllByStatus(PoiStatus status, Pageable pageable);
-
-    @Query(value = """
-        SELECT EXISTS (
-            SELECT 1 FROM pois
-            WHERE ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography, 5)
-        )
-        """, nativeQuery = true)
-    boolean existsNearby(@Param("lon") Double lon, @Param("lat") Double lat);
-
-    @EntityGraph(attributePaths = {"locales", "subcategories"})
-    List<PoiEntity> findAllByUser(UserEntity user);
 }

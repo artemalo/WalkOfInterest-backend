@@ -5,17 +5,14 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.Point;
 import sfedu.ictis.woi.exception.PoiNotPointException;
 import sfedu.ictis.woi.model.dto.*;
-import sfedu.ictis.woi.model.entity.PoiEntity;
-import sfedu.ictis.woi.model.entity.PoisLanguesEntity;
-import sfedu.ictis.woi.model.entity.SubcategoryEntity;
-import sfedu.ictis.woi.model.entity.UserEntity;
+import sfedu.ictis.woi.model.entity.*;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class PoiMapper {
-    public static PoiInfoDTO mapToInfoDTO(PoiEntity entity, String targetLang) {
+    public static PoiInfoDTO mapToInfoDTO(PoiAdminEntity entity, String targetLang) {
         PoiInfoDTO dto = new PoiInfoDTO();
         dto.setId(entity.getId());
         dto.setPoint(extractPoint(entity.getGeom(), entity.getId()));
@@ -31,7 +28,7 @@ public class PoiMapper {
         return dto;
     }
 
-    public static PoiAdminDTO mapToAdminDTO(PoiEntity entity, String targetLang) {
+    public static PoiAdminDTO mapToAdminDTO(PoiAdminEntity entity, String targetLang) {
         PoiAdminDTO dto = new PoiAdminDTO();
         dto.setId(entity.getId());
         dto.setPoint(extractPoint(entity.getGeom(), entity.getId()));
@@ -53,11 +50,11 @@ public class PoiMapper {
         return dto;
     }
 
-    public static PoiCardDTO mapToCardDTO(PoiEntity entity, String targetLang) {
+    public static PoiCardDTO mapToCardDTO(PoiAdminEntity entity, String targetLang) {
         PoiCardDTO dto = new PoiCardDTO();
         dto.setId(entity.getId());
 
-        PoisLanguesEntity locale = getMatchedLocale(entity.getLocales(), targetLang);
+        PoiAdminLanguesEntity locale = getMatchedLocale(entity.getLocales(), targetLang);
         if (locale != null) {
             dto.setName(locale.getPoiName());
         }
@@ -82,26 +79,26 @@ public class PoiMapper {
         throw new PoiNotPointException("POI не является Point");
     }
 
-    private static PoisLanguesEntity getMatchedLocale(List<PoisLanguesEntity> locales, String targetLang) {
+    private static PoiAdminLanguesEntity getMatchedLocale(List<PoiAdminLanguesEntity> locales, String targetLang) {
         if (locales == null || locales.isEmpty()) return null;
 
-        for (PoisLanguesEntity l : locales) {
+        for (PoiAdminLanguesEntity l : locales) {
             if (l.getLangue().equals(targetLang)) return l;
         }
 
-        for (PoisLanguesEntity l : locales) {
+        for (PoiAdminLanguesEntity l : locales) {
             if (l.getLangue().equals("default")) return l;
         }
 
-        for (PoisLanguesEntity l : locales) {
+        for (PoiAdminLanguesEntity l : locales) {
             if (l.getLangue().equals("en")) return l;
         }
 
         return locales.getFirst();
     }
 
-    private static void applyLocale(PoiEntity entity, String targetLang, Object dto) {
-        PoisLanguesEntity locale = getMatchedLocale(entity.getLocales(), targetLang);
+    private static void applyLocale(PoiAdminEntity entity, String targetLang, Object dto) {
+        PoiAdminLanguesEntity locale = getMatchedLocale(entity.getLocales(), targetLang);
         if (locale != null) {
             if (dto instanceof PoiInfoDTO info) {
                 info.setName(locale.getPoiName());
