@@ -10,7 +10,11 @@
         <h2>Вход в систему</h2>
 
         <div th:if="${param.error}" style="color: red;">
-            Неверный email или пароль
+            <span th:switch="${param.error[0]}">
+                <span th:case="'server_down'">К сожалению, база данных временно недоступна. Попробуйте позже.</span>
+                <span th:case="'bad_credentials'">Неверный email или пароль.</span>
+                <span th:case="*">Произошла ошибка при входе.</span>
+            </span>
         </div>
 
         <form th:action="@{/login}" method="POST">

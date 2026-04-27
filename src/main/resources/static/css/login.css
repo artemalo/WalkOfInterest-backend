@@ -1,5 +1,6 @@
 body {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
@@ -43,7 +44,7 @@ button {
   padding: 0.7em 1em;
   border-radius: 0.6em;
   border: none;
-  background-color: #5C6171;
+  background-color: #4B8F65;
   color: white;
   font-weight: 600;
   cursor: pointer;
@@ -62,11 +63,11 @@ div[th\\:if] {
 }
 
 div[th\\:if][style*="red"] {
-  color: #e06c75;
+  color: #CF2D24;
 }
 
 div[th\\:if][style*="green"] {
-  color: #98c379;
+  color: #4B8F65;
 }
 
 

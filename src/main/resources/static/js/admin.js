@@ -203,11 +203,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // TODO: logout! (this not work)
 
-        const form = document.getElementById('logout-form');
-        if (form) {
-            form.submit();
-        } else {
-            window.location.href = '/login?logout';
-        }
+        const csrfToken = document.querySelector("meta[name='_csrf']").getAttribute("content");
+        const csrfHeader = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '/logout';
+
+        const hiddenField = document.createElement('input');
+        hiddenField.type = 'hidden';
+        hiddenField.name = '_csrf';
+        hiddenField.value = csrfToken;
+
+        form.appendChild(hiddenField);
+        document.body.appendChild(form);
+
+        form.submit();
     };
 });

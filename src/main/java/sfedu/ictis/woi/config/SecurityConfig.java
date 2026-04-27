@@ -14,6 +14,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import sfedu.ictis.woi.exception.CustomAuthenticationFailureHandler;
 import sfedu.ictis.woi.exception.ErrorResponse;
 import sfedu.ictis.woi.filter.JwtAuthenticationFilter;
 import tools.jackson.databind.ObjectMapper;
@@ -57,7 +58,10 @@ public class SecurityConfig {
      */
     @Bean
     @Order(2)
-    public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain webSecurityFilterChain(
+            HttpSecurity http,
+            CustomAuthenticationFailureHandler failureHandler
+    ) throws Exception {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 .authorizeHttpRequests(auth -> auth
@@ -67,6 +71,7 @@ public class SecurityConfig {
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
+                        .failureHandler(failureHandler)
                         .defaultSuccessUrl("/panel", true)
                         .permitAll()
                 )
