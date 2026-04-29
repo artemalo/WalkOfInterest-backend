@@ -1,9 +1,11 @@
 package sfedu.ictis.woi.model.entity;
 
-import org.hibernate.annotations.Immutable;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.locationtech.jts.geom.Geometry;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -14,7 +16,9 @@ import java.util.Set;
 @Entity
 @Table(name = "pois")
 @Getter
-@Immutable
+@Setter
+@SQLDelete(sql = "UPDATE pois SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
+@SQLRestriction("deleted_at IS NULL")
 public class PoiEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,7 +56,7 @@ public class PoiEntity {
     private PoiStatus status = PoiStatus.APPROVED;
 
     @OneToMany(mappedBy = "poi", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PoiAdminLanguesEntity> locales = new ArrayList<>();
+    private List<PoiLanguesEntity> locales = new ArrayList<>();
 
     @OneToOne(mappedBy = "poi", cascade = CascadeType.ALL)
     private PoiRatingsEntity rating;

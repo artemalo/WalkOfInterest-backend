@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 public class PoiMapper {
-    public static PoiInfoDTO mapToInfoDTO(PoiAdminEntity entity, String targetLang) {
+    public static PoiInfoDTO mapToInfoDTO(PoiEntity entity, String targetLang) {
         PoiInfoDTO dto = new PoiInfoDTO();
         dto.setId(entity.getId());
         dto.setPoint(extractPoint(entity.getGeom(), entity.getId()));
@@ -28,7 +28,7 @@ public class PoiMapper {
         return dto;
     }
 
-    public static PoiAdminDTO mapToAdminDTO(PoiAdminEntity entity, String targetLang) {
+    public static PoiAdminDTO mapToAdminDTO(PoiEntity entity, String targetLang) {
         PoiAdminDTO dto = new PoiAdminDTO();
         dto.setId(entity.getId());
         dto.setPoint(extractPoint(entity.getGeom(), entity.getId()));
@@ -39,7 +39,10 @@ public class PoiMapper {
         applyLocale(entity, targetLang, dto);
 
         if (entity.getLocales() != null && !entity.getLocales().isEmpty()) {
-            dto.setLang(getMatchedLocale(entity.getLocales(), targetLang).getLangue());
+            PoiLanguesEntity matched = getMatchedLocale(entity.getLocales(), targetLang);
+            if (matched != null) {
+                dto.setLang(matched.getLangue());
+            }
         }
 
         if (entity.getSubcategories() != null) {
@@ -50,11 +53,11 @@ public class PoiMapper {
         return dto;
     }
 
-    public static PoiCardDTO mapToCardDTO(PoiAdminEntity entity, String targetLang) {
+    public static PoiCardDTO mapToCardDTO(PoiEntity entity, String targetLang) {
         PoiCardDTO dto = new PoiCardDTO();
         dto.setId(entity.getId());
 
-        PoiAdminLanguesEntity locale = getMatchedLocale(entity.getLocales(), targetLang);
+        PoiLanguesEntity locale = getMatchedLocale(entity.getLocales(), targetLang);
         if (locale != null) {
             dto.setName(locale.getPoiName());
         }
@@ -70,7 +73,6 @@ public class PoiMapper {
     }
 
 
-
     private static PointDTO extractPoint(Geometry geom, Long poiId) {
         if (geom instanceof Point point) {
             return new PointDTO(point.getY(), point.getX());
@@ -79,26 +81,26 @@ public class PoiMapper {
         throw new PoiNotPointException("POI не является Point");
     }
 
-    private static PoiAdminLanguesEntity getMatchedLocale(List<PoiAdminLanguesEntity> locales, String targetLang) {
+    private static PoiLanguesEntity getMatchedLocale(List<PoiLanguesEntity> locales, String targetLang) {
         if (locales == null || locales.isEmpty()) return null;
 
-        for (PoiAdminLanguesEntity l : locales) {
+        for (PoiLanguesEntity l : locales) {
             if (l.getLangue().equals(targetLang)) return l;
         }
 
-        for (PoiAdminLanguesEntity l : locales) {
+        for (PoiLanguesEntity l : locales) {
             if (l.getLangue().equals("default")) return l;
         }
 
-        for (PoiAdminLanguesEntity l : locales) {
+        for (PoiLanguesEntity l : locales) {
             if (l.getLangue().equals("en")) return l;
         }
 
         return locales.getFirst();
     }
 
-    private static void applyLocale(PoiAdminEntity entity, String targetLang, Object dto) {
-        PoiAdminLanguesEntity locale = getMatchedLocale(entity.getLocales(), targetLang);
+    private static void applyLocale(PoiEntity entity, String targetLang, Object dto) {
+        PoiLanguesEntity locale = getMatchedLocale(entity.getLocales(), targetLang);
         if (locale != null) {
             if (dto instanceof PoiInfoDTO info) {
                 info.setName(locale.getPoiName());

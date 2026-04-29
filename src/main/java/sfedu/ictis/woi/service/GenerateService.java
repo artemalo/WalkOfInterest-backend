@@ -43,7 +43,7 @@ public class GenerateService {
         );
 
         log.info("SearchService: point={},{}", midLat, midLon);
-        log.info("SearchService: flatPois = {}, maxTime = {}", flatPois.size(), request.getMaxTime());
+        log.info("SearchService (findPoisInIsochrone): flatPois = {}, maxTime = {}", flatPois.size(), request.getMaxTime());
         List<CategoryDTO> structuredData = DataMapper.mapToHierarchy(flatPois);
 
 

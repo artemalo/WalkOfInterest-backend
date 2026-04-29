@@ -1,13 +1,19 @@
 package sfedu.ictis.woi.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import sfedu.ictis.woi.model.entity.PoiEntity;
+import sfedu.ictis.woi.model.entity.PoiStatus;
+import sfedu.ictis.woi.model.entity.UserEntity;
 import sfedu.ictis.woi.projection.FlatPoiProjection;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
@@ -48,7 +54,8 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
             LIMIT 1
         ) pl ON true
         WHERE
-                p.status != 'REJECTED'
+                p.deleted_at IS NULL
+                AND p.status = 'APPROVED'
                 AND p.geom && ST_GeomFromText(:isochroneWkt, 4326)
                 AND ST_Within(p.geom, ST_GeomFromText(:isochroneWkt, 4326))
         ORDER BY s.weight DESC;
@@ -57,4 +64,28 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
             @Param("lang") String lang,
             @Param("isochroneWkt") String wkt
             );
+
+    @EntityGraph(attributePaths = {"locales", "subcategories"})
+    List<PoiEntity> findAllByUser(UserEntity user);
+
+    @Query(value = """
+        SELECT EXISTS (
+            SELECT 1 FROM pois
+            WHERE deleted_at IS NULL
+              AND ST_DWithin(geom::geography, ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography, 5)
+        )
+        """, nativeQuery = true)
+    boolean existsNearby(@Param("lon") Double lon, @Param("lat") Double lat);
+
+
+
+    @Query(value = "SELECT * FROM pois WHERE id = :id", nativeQuery = true)
+    Optional<PoiEntity> findByIdIncludingDeleted(@Param("id") Long id);
+
+    @Query(
+            value = "SELECT * FROM pois WHERE status = :#{#status.name()}",
+            countQuery = "SELECT COUNT(*) FROM pois WHERE status = :#{#status.name()}",
+            nativeQuery = true
+    )
+    Page<PoiEntity> findAllByStatusIncludingDeleted(@Param("status") PoiStatus status, Pageable pageable);
 }
