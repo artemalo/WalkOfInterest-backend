@@ -38,14 +38,17 @@ public class OptimizationService {
     }
 
     private void pruneResponse(SearchResponse response) {
+        Set<Long> seenPoiIds = new HashSet<>();
+
         List<CategoryDTO> prunedCategories = response.getCategories().stream()
                 .peek(cat -> {
                     List<SubCategoryDTO> prunedSubs = cat.getSubcategories().stream()
                             .peek(sub -> {
-                                List<PoiDTO> selectedPois = sub.getPois().stream()
-                                        .filter(poi -> Boolean.TRUE.equals(poi.getSelected()))
+                                List<PoiDTO> uniquePois = sub.getPois().stream()
+                                        .filter(poi -> poi.getId() != null && seenPoiIds.add(poi.getId()))
                                         .collect(Collectors.toList());
-                                sub.setPois(selectedPois);
+
+                                sub.setPois(uniquePois);
                             })
                             .filter(sub -> !sub.getPois().isEmpty())
                             .collect(Collectors.toList());
