@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.model.dto.PoiAddDTO;
 import sfedu.ictis.woi.model.dto.PoiCardDTO;
 import sfedu.ictis.woi.model.dto.PoiInfoDTO;
+import sfedu.ictis.woi.model.dto.ReviewDTO;
 
 import java.util.List;
 
@@ -21,6 +22,14 @@ public interface PoiControllerApi {
     @Operation(summary = "Получить детальную информацию о POI по ID")
     @GetMapping("/{id}")
     PoiInfoDTO getPoiById(
+            @PathVariable Long id,
+            @Parameter(description = "Язык ответа (ru/en)")
+            @RequestParam(defaultValue = "ru") String lang
+    );
+
+    @Operation(summary = "Получить список отзывов по POI")
+    @GetMapping("/{id}/reviews")
+    List<ReviewDTO> getReviewsByPoiId(
             @PathVariable Long id,
 
             @Parameter(description = "Язык ответа (ru/en)")

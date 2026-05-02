@@ -25,6 +25,16 @@ public class PoiMapper {
                     .map(PoiMapper::mapToTagNameDTO)
                     .collect(Collectors.toList()));
         }
+
+        PoiRatingsEntity rating = entity.getRating();
+        if (rating != null) {
+            dto.setRating(rating.getAvgRate() != null ? rating.getAvgRate() : 0.0);
+            dto.setCountRate(rating.getCountRate() != null ? rating.getCountRate() : 0);
+        } else {
+            dto.setRating(0.0);
+            dto.setCountRate(0);
+        }
+
         return dto;
     }
 

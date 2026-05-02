@@ -7,6 +7,7 @@ import sfedu.ictis.woi.api.PoiControllerApi;
 import sfedu.ictis.woi.model.dto.PoiAddDTO;
 import sfedu.ictis.woi.model.dto.PoiCardDTO;
 import sfedu.ictis.woi.model.dto.PoiInfoDTO;
+import sfedu.ictis.woi.model.dto.ReviewDTO;
 import sfedu.ictis.woi.service.PoiService;
 
 import java.util.List;
@@ -30,6 +31,14 @@ public class PoiController implements PoiControllerApi {
             @RequestParam(defaultValue = "ru") String lang
     ) {
         return poiService.getPoiById(id, lang);
+    }
+
+    @GetMapping("/{id}/reviews")
+    public List<ReviewDTO> getReviewsByPoiId(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "ru") String lang
+    ) {
+        return poiService.getReviewsByPoiId(id, lang);
     }
 
     @PutMapping("/{id}")

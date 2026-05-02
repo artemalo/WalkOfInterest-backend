@@ -20,4 +20,7 @@ public class PoiInfoDTO {
     private List<TagNameDTO> tags;
 
     private PoiStatus status;
+
+    private Double rating;
+    private Integer countRate;
 }

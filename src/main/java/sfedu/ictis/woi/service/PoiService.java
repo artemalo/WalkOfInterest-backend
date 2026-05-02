@@ -13,14 +13,12 @@ import sfedu.ictis.woi.exception.InvalidCredentialsException;
 import sfedu.ictis.woi.exception.PoiAlreadyExistsException;
 import sfedu.ictis.woi.exception.ResourceNotFoundException;
 import sfedu.ictis.woi.mapper.PoiMapper;
+import sfedu.ictis.woi.mapper.UserMapper;
 import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.model.entity.*;
-import sfedu.ictis.woi.repository.PoiRepository;
-import sfedu.ictis.woi.repository.SubcategoryRepository;
-import sfedu.ictis.woi.repository.UserRepository;
+import sfedu.ictis.woi.repository.*;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -30,6 +28,9 @@ public class PoiService {
     private final PoiRepository poiRepository;
     private final UserRepository userRepository;
     private final SubcategoryRepository subcategoryRepository;
+
+    private final ReviewRepository reviewRepository;
+    private final ReviewLikeRepository reviewLikeRepository;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -118,7 +119,40 @@ public class PoiService {
         log.warn("[{}] poi_id: {}",status, entity.getId());
     }
 
+    public List<ReviewDTO> getReviewsByPoiId(Long poiId, String lang) {
+        PoiEntity poi = poiRepository.findById(poiId)
+                .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + poiId));
 
+        List<ReviewEntity> reviews = reviewRepository.findAllByPoiOrderByCreatedAtDesc(poi);
+        if (reviews.isEmpty()) return Collections.emptyList();
+
+        Map<Long, int[]> likesMap = collectLikesMap(reviews);
+
+        return reviews.stream()
+                .map(r -> {
+                    int[] ld = likesMap.getOrDefault(r.getId(), new int[]{0, 0});
+                    return UserMapper.mapToReviewDTO(r, ld[0], ld[1], lang);
+                })
+                .toList();
+    }
+
+
+
+    private Map<Long, int[]> collectLikesMap(List<ReviewEntity> reviews) {
+        List<Long> reviewIds = reviews.stream().map(ReviewEntity::getId).toList();
+        var aggregates = reviewLikeRepository.aggregateByReviewIds(reviewIds);
+
+        Map<Long, int[]> result = new HashMap<>();
+        for (var agg : aggregates) {
+            int[] ld = result.computeIfAbsent(agg.getReviewId(), _ -> new int[]{0, 0});
+            if (Boolean.TRUE.equals(agg.getValue())) {
+                ld[0] += agg.getCnt().intValue();
+            } else if (Boolean.FALSE.equals(agg.getValue())) {
+                ld[1] += agg.getCnt().intValue();
+            }
+        }
+        return result;
+    }
 
     private UserEntity getAuthenticatedUser(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
