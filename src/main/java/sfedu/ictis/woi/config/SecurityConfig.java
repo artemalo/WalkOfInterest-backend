@@ -63,9 +63,9 @@ public class SecurityConfig {
             CustomAuthenticationFailureHandler failureHandler
     ) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/api-docs/**", "/swagger-ui/**"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/login", "/css/**", "/js/**", "/images/**", "/swagger-ui/**", "/api-docs/**").permitAll()
                         .requestMatchers("/panel/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
