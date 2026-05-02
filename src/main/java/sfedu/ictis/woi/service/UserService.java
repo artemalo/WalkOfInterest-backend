@@ -8,6 +8,7 @@ import sfedu.ictis.woi.exception.InvalidCredentialsException;
 import sfedu.ictis.woi.exception.ResourceNotFoundException;
 import sfedu.ictis.woi.exception.UserAlreadyExistsException;
 import sfedu.ictis.woi.mapper.UserMapper;
+import sfedu.ictis.woi.model.dto.ReactionType;
 import sfedu.ictis.woi.model.dto.ReviewDTO;
 import sfedu.ictis.woi.model.dto.UserProfileDTO;
 import sfedu.ictis.woi.model.entity.ReviewEntity;
@@ -20,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +29,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
     private final ReviewLikeRepository reviewLikeRepository;
+    private final ReviewLikeService reviewLikeService;
 
     public UserProfileDTO getMyProfile(Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);
@@ -41,7 +44,7 @@ public class UserService {
         return UserMapper.mapToProfileDTO(user, count);
     }
 
-    public List<ReviewDTO> getReviewsByUsername(String username, String lang) {
+    public List<ReviewDTO> getReviewsByUsername(String username, Authentication authentication, String lang) {
         UserEntity user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден: " + username));
 
@@ -49,11 +52,14 @@ public class UserService {
         if (reviews.isEmpty()) return Collections.emptyList();
 
         Map<Long, int[]> likesMap = collectLikesMap(reviews);
+        Map<Long, ReactionType> myReactions = collectMyReactions(authentication, reviews);
 
         return reviews.stream()
                 .map(r -> {
                     int[] ld = likesMap.getOrDefault(r.getId(), new int[]{0, 0});
-                    return UserMapper.mapToReviewDTO(r, ld[0], ld[1], lang);
+                    return UserMapper.mapToReviewDTO(
+                            r, ld[0], ld[1], myReactions.get(r.getId()), lang
+                    );
                 })
                 .toList();
     }
@@ -93,6 +99,17 @@ public class UserService {
             }
         }
         return result;
+    }
+
+    private Map<Long, ReactionType> collectMyReactions(Authentication authentication, List<ReviewEntity> reviews) {
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
+            return Map.of();
+        }
+        Optional<UserEntity> userOpt = userRepository.findByEmail(authentication.getName());
+        if (userOpt.isEmpty()) return Map.of();
+
+        List<Long> reviewIds = reviews.stream().map(ReviewEntity::getId).toList();
+        return reviewLikeService.collectMyReactions(userOpt.get().getId(), reviewIds);
     }
 
     private UserEntity getAuthenticatedUser(Authentication authentication) {

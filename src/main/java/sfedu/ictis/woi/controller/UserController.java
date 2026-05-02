@@ -32,9 +32,10 @@ public class UserController implements UserControllerApi {
     @GetMapping("/{username}/reviews")
     public ResponseEntity<List<ReviewDTO>> getReviewsByUsername(
             @PathVariable String username,
+            Authentication authentication,
             @RequestParam(defaultValue = "default") String lang
     ) {
-        return ResponseEntity.ok(userService.getReviewsByUsername(username, lang));
+        return ResponseEntity.ok(userService.getReviewsByUsername(username, authentication, lang));
     }
 
     @PatchMapping("/me")

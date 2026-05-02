@@ -40,7 +40,11 @@ public class PoiController implements PoiControllerApi {
             @PathVariable Long id,
             @RequestParam(defaultValue = "ru") String lang
     ) {
-        return poiService.getReviewsByPoiId(id, lang);
+        return poiService.getReviewsByPoiId(
+                id,
+                SecurityContextHolder.getContext().getAuthentication(),
+                lang
+        );
     }
 
     @PutMapping("/{id}/reviews/me")

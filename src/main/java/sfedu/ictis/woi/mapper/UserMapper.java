@@ -1,5 +1,6 @@
 package sfedu.ictis.woi.mapper;
 
+import sfedu.ictis.woi.model.dto.ReactionType;
 import sfedu.ictis.woi.model.dto.ReviewDTO;
 import sfedu.ictis.woi.model.dto.UserProfileDTO;
 import sfedu.ictis.woi.model.entity.PoiLanguesEntity;
@@ -32,6 +33,16 @@ public class UserMapper {
             int dislikes,
             String targetLang
     ) {
+        return mapToReviewDTO(review, likes, dislikes, null, targetLang);
+    }
+
+    public static ReviewDTO mapToReviewDTO(
+            ReviewEntity review,
+            int likes,
+            int dislikes,
+            ReactionType myReaction,
+            String targetLang
+    ) {
         UserEntity author = review.getUser();
         return ReviewDTO.builder()
                 .id(review.getId())
@@ -43,6 +54,7 @@ public class UserMapper {
                 .rating(review.getRate() != null ? review.getRate().intValue() : 0)
                 .likes(likes)
                 .dislikes(dislikes)
+                .myReaction(myReaction)
                 .createdAt(review.getCreatedAt())
                 .build();
     }

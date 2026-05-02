@@ -36,7 +36,7 @@ public interface UserControllerApi {
             @Parameter(description = "Никнейм пользователя") @PathVariable String username
     );
 
-    @Operation(summary = "Получить отзывы пользователя по никнейму")
+    @Operation(summary = "Получить отзывы пользователя по никнейму (с реакцией текущего пользователя)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Список отзывов"),
             @ApiResponse(responseCode = "404", description = "Пользователь не найден")
@@ -44,6 +44,7 @@ public interface UserControllerApi {
     @GetMapping("/{username}/reviews")
     ResponseEntity<List<ReviewDTO>> getReviewsByUsername(
             @Parameter(description = "Никнейм пользователя") @PathVariable String username,
+            Authentication authentication,
             @Parameter(description = "Язык POI", example = "ru")
             @RequestParam(defaultValue = "default") String lang
     );

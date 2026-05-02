@@ -23,5 +23,7 @@ public class ReviewDTO {
     private Integer rating;
     private Integer likes;
     private Integer dislikes;
+
+    private ReactionType myReaction;
     private LocalDateTime createdAt;
 }

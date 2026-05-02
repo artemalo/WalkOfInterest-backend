@@ -31,6 +31,7 @@ public class PoiService {
 
     private final ReviewRepository reviewRepository;
     private final ReviewLikeRepository reviewLikeRepository;
+    private final ReviewLikeService reviewLikeService;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -119,23 +120,6 @@ public class PoiService {
         log.warn("[{}] poi_id: {}",status, entity.getId());
     }
 
-    public List<ReviewDTO> getReviewsByPoiId(Long poiId, String lang) {
-        PoiEntity poi = poiRepository.findById(poiId)
-                .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + poiId));
-
-        List<ReviewEntity> reviews = reviewRepository.findAllByPoiOrderByCreatedAtDesc(poi);
-        if (reviews.isEmpty()) return Collections.emptyList();
-
-        Map<Long, int[]> likesMap = collectLikesMap(reviews);
-
-        return reviews.stream()
-                .map(r -> {
-                    int[] ld = likesMap.getOrDefault(r.getId(), new int[]{0, 0});
-                    return UserMapper.mapToReviewDTO(r, ld[0], ld[1], lang);
-                })
-                .toList();
-    }
-
     @Transactional
     public ReviewDTO upsertMyReview(Long poiId, ReviewRequestDTO dto, Authentication authentication, String lang) {
         UserEntity user = getAuthenticatedUser(authentication);
@@ -167,9 +151,32 @@ public class PoiService {
             }
         }
 
-        return UserMapper.mapToReviewDTO(saved, likes, dislikes, lang);
+        ReactionType myReaction = reviewLikeService
+                .collectMyReactions(user.getId(), List.of(saved.getId()))
+                .get(saved.getId());
+
+        return UserMapper.mapToReviewDTO(saved, likes, dislikes, myReaction, lang);
     }
 
+    public List<ReviewDTO> getReviewsByPoiId(Long poiId, Authentication authentication, String lang) {
+        PoiEntity poi = poiRepository.findById(poiId)
+                .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + poiId));
+
+        List<ReviewEntity> reviews = reviewRepository.findAllByPoiOrderByCreatedAtDesc(poi);
+        if (reviews.isEmpty()) return Collections.emptyList();
+
+        Map<Long, int[]> likesMap = collectLikesMap(reviews);
+        Map<Long, ReactionType> myReactions = collectMyReactions(authentication, reviews);
+
+        return reviews.stream()
+                .map(r -> {
+                    int[] ld = likesMap.getOrDefault(r.getId(), new int[]{0, 0});
+                    return UserMapper.mapToReviewDTO(
+                            r, ld[0], ld[1], myReactions.get(r.getId()), lang
+                    );
+                })
+                .toList();
+    }
 
 
     private Map<Long, int[]> collectLikesMap(List<ReviewEntity> reviews) {
@@ -186,6 +193,17 @@ public class PoiService {
             }
         }
         return result;
+    }
+
+    private Map<Long, ReactionType> collectMyReactions(Authentication authentication, List<ReviewEntity> reviews) {
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
+            return Map.of();
+        }
+        Optional<UserEntity> userOpt = userRepository.findByEmail(authentication.getName());
+        if (userOpt.isEmpty()) return Map.of();
+
+        List<Long> reviewIds = reviews.stream().map(ReviewEntity::getId).toList();
+        return reviewLikeService.collectMyReactions(userOpt.get().getId(), reviewIds);
     }
 
     private UserEntity getAuthenticatedUser(Authentication authentication) {
