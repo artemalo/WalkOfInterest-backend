@@ -83,12 +83,25 @@ public class PoiMapper {
     }
 
 
+
     private static PointDTO extractPoint(Geometry geom, Long poiId) {
+        if (geom == null || geom.isEmpty()) {
+            log.warn("POI с ID {} имеет пустую геометрию", poiId);
+            return null;
+        }
+
         if (geom instanceof Point point) {
             return new PointDTO(point.getY(), point.getX());
         }
-        log.warn("POI с ID {} не является точкой", poiId);
-        throw new PoiNotPointException("POI не является Point");
+
+        Point centroid = geom.getCentroid();
+        if (centroid == null || centroid.isEmpty()) {
+            log.warn("POI с ID {} ({}): не удалось вычислить центроид", poiId, geom.getGeometryType());
+            throw new PoiNotPointException("POI не является Point");
+        }
+
+        log.debug("POI с ID {} имеет тип {}, используется центроид", poiId, geom.getGeometryType());
+        return new PointDTO(centroid.getY(), centroid.getX());
     }
 
     private static PoiLanguesEntity getMatchedLocale(List<PoiLanguesEntity> locales, String targetLang) {
