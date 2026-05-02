@@ -1,5 +1,6 @@
 package sfedu.ictis.woi.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -8,6 +9,7 @@ import sfedu.ictis.woi.model.dto.PoiAddDTO;
 import sfedu.ictis.woi.model.dto.PoiCardDTO;
 import sfedu.ictis.woi.model.dto.PoiInfoDTO;
 import sfedu.ictis.woi.model.dto.ReviewDTO;
+import sfedu.ictis.woi.model.dto.ReviewRequestDTO;
 import sfedu.ictis.woi.service.PoiService;
 
 import java.util.List;
@@ -39,6 +41,20 @@ public class PoiController implements PoiControllerApi {
             @RequestParam(defaultValue = "ru") String lang
     ) {
         return poiService.getReviewsByPoiId(id, lang);
+    }
+
+    @PutMapping("/{id}/reviews/me")
+    public ReviewDTO upsertMyReview(
+            @PathVariable Long id,
+            @Valid @RequestBody ReviewRequestDTO request,
+            @RequestParam(defaultValue = "ru") String lang
+    ) {
+        return poiService.upsertMyReview(
+                id,
+                request,
+                SecurityContextHolder.getContext().getAuthentication(),
+                lang
+        );
     }
 
     @PutMapping("/{id}")

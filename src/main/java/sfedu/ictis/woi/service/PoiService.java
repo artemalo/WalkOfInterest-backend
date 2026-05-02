@@ -136,6 +136,40 @@ public class PoiService {
                 .toList();
     }
 
+    @Transactional
+    public ReviewDTO upsertMyReview(Long poiId, ReviewRequestDTO dto, Authentication authentication, String lang) {
+        UserEntity user = getAuthenticatedUser(authentication);
+
+        PoiEntity poi = poiRepository.findById(poiId)
+                .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + poiId));
+
+        ReviewEntity review = reviewRepository.findByPoiAndUser(poi, user)
+                .orElseGet(() -> {
+                    ReviewEntity r = new ReviewEntity();
+                    r.setPoi(poi);
+                    r.setUser(user);
+                    return r;
+                });
+
+        review.setRate(dto.getRating().shortValue());
+        review.setText(dto.getContent());
+
+        ReviewEntity saved = reviewRepository.save(review);
+
+        int likes = 0;
+        int dislikes = 0;
+        var aggregates = reviewLikeRepository.aggregateByReviewIds(List.of(saved.getId()));
+        for (var agg : aggregates) {
+            if (Boolean.TRUE.equals(agg.getValue())) {
+                likes = agg.getCnt().intValue();
+            } else if (Boolean.FALSE.equals(agg.getValue())) {
+                dislikes = agg.getCnt().intValue();
+            }
+        }
+
+        return UserMapper.mapToReviewDTO(saved, likes, dislikes, lang);
+    }
+
 
 
     private Map<Long, int[]> collectLikesMap(List<ReviewEntity> reviews) {

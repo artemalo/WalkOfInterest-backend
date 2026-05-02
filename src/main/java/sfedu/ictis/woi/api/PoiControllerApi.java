@@ -5,11 +5,13 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.model.dto.PoiAddDTO;
 import sfedu.ictis.woi.model.dto.PoiCardDTO;
 import sfedu.ictis.woi.model.dto.PoiInfoDTO;
 import sfedu.ictis.woi.model.dto.ReviewDTO;
+import sfedu.ictis.woi.model.dto.ReviewRequestDTO;
 
 import java.util.List;
 
@@ -32,6 +34,21 @@ public interface PoiControllerApi {
     List<ReviewDTO> getReviewsByPoiId(
             @PathVariable Long id,
 
+            @Parameter(description = "Язык ответа (ru/en)")
+            @RequestParam(defaultValue = "ru") String lang
+    );
+
+    @Operation(summary = "Создать или обновить отзыв текущего пользователя на POI (один отзыв на пользователя)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Отзыв создан или обновлён"),
+            @ApiResponse(responseCode = "400", description = "Ошибка валидации"),
+            @ApiResponse(responseCode = "401", description = "Не авторизован"),
+            @ApiResponse(responseCode = "404", description = "POI не найден")
+    })
+    @PutMapping("/{id}/reviews/me")
+    ReviewDTO upsertMyReview(
+            @PathVariable Long id,
+            @Valid @RequestBody ReviewRequestDTO request,
             @Parameter(description = "Язык ответа (ru/en)")
             @RequestParam(defaultValue = "ru") String lang
     );

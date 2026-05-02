@@ -7,6 +7,7 @@ import sfedu.ictis.woi.model.entity.ReviewEntity;
 import sfedu.ictis.woi.model.entity.UserEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
@@ -17,4 +18,6 @@ public interface ReviewRepository extends JpaRepository<ReviewEntity, Long> {
     List<ReviewEntity> findAllByPoiOrderByCreatedAtDesc(PoiEntity poi);
 
     long countByPoi(PoiEntity poi);
+
+    Optional<ReviewEntity> findByPoiAndUser(PoiEntity poi, UserEntity user);
 }
