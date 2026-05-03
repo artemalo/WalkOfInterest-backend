@@ -14,10 +14,7 @@ import sfedu.ictis.woi.model.dto.PointDTO;
 import sfedu.ictis.woi.model.dto.RouteDTO;
 import tools.jackson.databind.JsonNode;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -107,7 +104,7 @@ public class GraphHopperClient implements GraphHopperRequest {
     }
 
     @Override
-    public List<RouteDTO> getRoutes(List<PointDTO> categories) { //TODO одинаковые не возвращать
+    public List<RouteDTO> getRoutes(List<PointDTO> categories) {
         int variantsCount = 5;
 
         return Flux.range(0, variantsCount)
