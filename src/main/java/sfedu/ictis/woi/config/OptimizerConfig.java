@@ -4,27 +4,52 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Конфигурация отбора маршрута.
+ *
+ * SpEL-формула:
+ *   #corridor   - [0, 1], близость к коридору A↔B
+ *   #rating     - [0, 1], нормализованный рейтинг
+ *   #status     - 1 для APPROVED, иначе approvedPenalty
+ *   #userBonus  - 1 для не-user-сгенерированных, иначе userPoiPenalty
+ */
 @Configuration
 @ConfigurationProperties(prefix = "app.optimizer")
 @Data
 public class OptimizerConfig {
-    private int maxPoisPerCategory = 20;
+    /**
+     * Жёсткий потолок числа POI в итоговом маршруте
+     */
+    private int maxTotalPois = 50;
 
-    private int maxCategories = 8;
-    private int maxSubcategories = 3;
-    private int dropBatchSize = 1;
+    /**
+     * Множитель к maxTime для жёсткого constraint'а
+     */
+    private double hardTimeFactor = 1.05;
 
-    private String subcategoryFormula =
-            "(#avgRate * 0.5) + " +
-                    "(T(java.lang.Math).log10(#totalCount + 1) * 0.3) + " +
-                    "(#poiCount * 0.2)";
+    /**
+     * Целевое время = maxTime * softTimeFactor
+     */
+    private double softTimeFactor = 0.95;
 
+    /**
+     * для corridor_score
+     */
+    private double corridorSigmaMeters = 300.0;
+
+    /** Множитель безопасности для эллипса pre-фильтра. */
+    private double ellipseSafetyFactor = 1.10;
+
+    /**
+     * Бонус за разнообразие категорий
+     */
+    private double diversityBonus = 0.05;
+
+    /**
+     * Финальная формула score POI
+     */
     private String poiFormula =
-            "(" +
-                "(#rate * 0.6) + " +
-                    "(T(java.lang.Math).log10(#countRate + 1) * 0.2) + " +
-                    "(#distWeight * 0.2)" +
-            ") * #statusWeight * #userPoiBonus";
+            "(#corridor * 0.55 + #rating * 0.30) * #status * #userBonus";
 
     private Defaults defaults = new Defaults();
     private Weights weights = new Weights();
@@ -32,15 +57,12 @@ public class OptimizerConfig {
     @Data
     public static class Defaults {
         private double rate = 3.0;
-        private int count = 1;
+        private int count = 0;
     }
 
     @Data
     public static class Weights {
-        private double userPoiPenalty = 0.9;
-
-        private double approvedWeight = 1.0;
-
-        private double notApprovedWeight = 0.1;
+        private double approvedPenalty = 0.10;
+        private double userPoiPenalty = 0.90;
     }
 }
