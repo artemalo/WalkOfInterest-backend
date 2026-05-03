@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import sfedu.ictis.woi.config.OptimizerConfig;
+import sfedu.ictis.woi.exception.BusinessException;
 import sfedu.ictis.woi.infrastructure.client.GraphHopperClient;
 import sfedu.ictis.woi.model.SearchResponse;
 import sfedu.ictis.woi.model.dto.CategoryDTO;
@@ -52,6 +53,19 @@ public class OptimizationService {
         PointDTO p2 = request.getP2();
         int maxTime = request.getMaxTime();
         double hardBudget = maxTime * config.getHardTimeFactor();
+
+        double directWalkMin = ghClient.calculateRouteTime(List.of(p1, p2)); // GeoUtils.walkMinutes(GeoUtils.haversine(p1, p2))
+        double minAcceptable = directWalkMin * config.getMinTimeFactor();
+
+        if (maxTime < minAcceptable) {
+            log.warn("optimize: maxTime={}m < minAcceptable={}m (directWalk={}m). Reject.",
+                    maxTime, (int) Math.ceil(minAcceptable), (int) Math.ceil(directWalkMin));
+            throw new BusinessException(
+                    "maxTime слишком мал " +
+                            "(минимум: " + (int) Math.ceil(minAcceptable) + "м; " +
+                            "прямая дорога ~" + (int) Math.ceil(directWalkMin) + "м)"
+            );
+        }
 
         List<Candidate> all = flatten(response);
         log.info("optimize: total POIs in response = {}", all.size());
@@ -117,7 +131,7 @@ public class OptimizationService {
                     p1.getLat(), p1.getLon(),
                     p2.getLat(), p2.getLon()
             );
-            // corridor_score = exp(−detour²/(2σ²)) — нормальное спадание, ∈ (0, 1]
+            // corridor_score = exp(−detour²/(2σ²)) - нормальное спадание | (0, 1]
             double corridor = Math.exp(-(detour * detour) / (2.0 * sigma * sigma));
             double base = scoreCalculator.calculate(c.poi(), corridor);
             c.setScore(base);

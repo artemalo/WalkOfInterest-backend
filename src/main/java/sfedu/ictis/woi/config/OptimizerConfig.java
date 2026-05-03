@@ -33,11 +33,18 @@ public class OptimizerConfig {
     private double softTimeFactor = 0.95;
 
     /**
+     * Минимально допустимый maxTime относительно direct walk A->B.
+     */
+    private double minTimeFactor = 1.5;
+
+    /**
      * для corridor_score
      */
     private double corridorSigmaMeters = 300.0;
 
-    /** Множитель безопасности для эллипса pre-фильтра. */
+    /**
+     * Множитель безопасности для эллипса pre-фильтра
+     */
     private double ellipseSafetyFactor = 1.10;
 
     /**
@@ -48,8 +55,7 @@ public class OptimizerConfig {
     /**
      * Финальная формула score POI
      */
-    private String poiFormula =
-            "(#corridor * 0.55 + #rating * 0.30) * #status * #userBonus";
+    private String poiFormula = "(#corridor * 0.55 + #rating * 0.30) * #status * #userBonus";
 
     private Defaults defaults = new Defaults();
     private Weights weights = new Weights();
