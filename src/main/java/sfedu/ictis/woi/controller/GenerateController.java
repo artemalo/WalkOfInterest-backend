@@ -40,8 +40,8 @@ public class GenerateController implements GenerateControllerApi {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/time")
-    public ResponseEntity<Long> getTime(List<PointDTO> request) {
-        return null; // TODO
+    @PostMapping("/time")
+    public ResponseEntity<Long> getTime(@RequestBody List<PointDTO> request) {
+        return ResponseEntity.ok(generateService.getTime(request));
     }
 }

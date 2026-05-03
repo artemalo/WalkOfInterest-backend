@@ -50,6 +50,6 @@ public interface GenerateControllerApi {
             @ApiResponse(responseCode = "200", description = "Время получено"),
             @ApiResponse(responseCode = "400", description = "Некорректные входные данные")
     })
-    @GetMapping("/time")
+    @PostMapping("/time")
     ResponseEntity<Long> getTime(@RequestBody List<PointDTO> request);
 }

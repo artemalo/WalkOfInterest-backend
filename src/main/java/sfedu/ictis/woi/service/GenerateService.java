@@ -67,6 +67,35 @@ public class GenerateService {
         }
     }
 
+    public long getTime(List<PointDTO> points) {
+        if (points == null || points.size() < 2) {
+            throw new IllegalArgumentException("Нужно минимум 2 точки для расчета времени");
+        }
+
+        for (PointDTO p : points) {
+            if (p == null || p.getLat() == null || p.getLon() == null) {
+                throw new IllegalArgumentException("Координаты точки обязательны");
+            }
+        }
+
+        try {
+            long time = ghClient.calculateRouteTime(points);
+
+            if (time < 0) {
+                throw new IllegalStateException("Invalid route time");
+            }
+
+            return time;
+        } catch (BusinessException | IllegalArgumentException | IllegalStateException e) {
+            throw e;
+        } catch (Exception e) {
+            log.warn("GraphHopper failed on getTime, fallback triggered", e);
+            throw new BusinessException("GraphHopper failed, fallback triggered");
+        }
+    }
+
+
+
     private String safeFetchIsochrone(double lat, double lon, int seconds) {
         try {
             return ghClient.fetchIsochrone(lat, lon, seconds);
