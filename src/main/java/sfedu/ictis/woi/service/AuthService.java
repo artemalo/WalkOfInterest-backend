@@ -78,12 +78,16 @@ public class AuthService {
     public AuthResponse refresh(String refreshToken) {
         RefreshTokenEntity token = refreshTokenService.verify(refreshToken);
 
+        refreshTokenRepository.delete(token);
+
         var userDetails = applicationConfig.userDetailsService()
                 .loadUserByUsername(token.getUser().getEmail());
 
         String newAccessToken = jwtService.generateToken(userDetails);
+        String newRefreshToken = refreshTokenService
+                .createRefreshToken(token.getUser().getEmail()).getToken();
 
-        return new AuthResponse(newAccessToken, refreshToken);
+        return new AuthResponse(newAccessToken, newRefreshToken);
     }
 
     @Transactional
