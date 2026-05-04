@@ -21,6 +21,7 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
         SELECT
             c.id as catId, c.category_name as catName, c.category_description as catDescription, c.category_icon as catIcon,
             s.id as subId, s.subcategory_name as subName, s.weight as weight,
+            COALESCE(s.interest, 0.0) as interest,
             si.subcategory_description as subDescription, si.subcategory_icon as subIcon,
             p.id as poiId,
             p.user_id as userId,
@@ -63,7 +64,7 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
     List<FlatPoiProjection> findPoisInIsochrone(
             @Param("lang") String lang,
             @Param("isochroneWkt") String wkt
-            );
+    );
 
     @EntityGraph(attributePaths = {"locales", "subcategories"})
     List<PoiEntity> findAllByUser(UserEntity user);

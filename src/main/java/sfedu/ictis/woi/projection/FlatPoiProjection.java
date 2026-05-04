@@ -14,6 +14,7 @@ public interface FlatPoiProjection {
     Integer getSubId();
     String getSubName();
     Double getWeight();
+    Double getInterest();
     String getSubDescription();
     String getSubIcon();
 

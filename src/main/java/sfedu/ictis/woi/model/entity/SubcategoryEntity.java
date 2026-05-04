@@ -26,6 +26,7 @@ public class SubcategoryEntity {
     private String name;
 
     private Double weight;
+    private Double interest;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")

@@ -18,6 +18,7 @@ import sfedu.ictis.woi.service.selection.RouteAssembler;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,7 +55,7 @@ public class OptimizationService {
         int maxTime = request.getMaxTime();
         double hardBudget = maxTime * config.getHardTimeFactor();
 
-        double directWalkMin = ghClient.calculateRouteTime(List.of(p1, p2)); // GeoUtils.walkMinutes(GeoUtils.haversine(p1, p2))
+        double directWalkMin = ghClient.calculateRouteTime(List.of(p1, p2));
         double minAcceptable = directWalkMin * config.getMinTimeFactor();
 
         if (maxTime < minAcceptable) {
@@ -186,18 +187,7 @@ public class OptimizationService {
             double estimatedReal = currentHav * ghToHavRatio;
             if (estimatedReal <= hardBudget) break;
 
-            int worstIdx = -1;
-            double worstRatio = Double.MAX_VALUE;
-
-            for (int i = 0; i < mutable.size(); i++) {
-                double saved = removalSavedMinutes(mutable, i, p1, p2);
-                if (saved <= 1e-6) continue;
-                double r = mutable.get(i).score() / saved;
-                if (r < worstRatio) {
-                    worstRatio = r;
-                    worstIdx = i;
-                }
-            }
+            int worstIdx = pickWorstByScorePerMinute(mutable, p1, p2);
             if (worstIdx < 0) break;
             mutable.remove(worstIdx);
         }
@@ -278,10 +268,45 @@ public class OptimizationService {
         return pts;
     }
 
+    private Map<Integer, Integer> calculateCategoryTimes(List<Candidate> picked, PointDTO p1, PointDTO p2) {
+        Map<Integer, List<Candidate>> byCategory = new LinkedHashMap<>();
+        for (Candidate c : picked) {
+            Integer catId = c.cat().getId();
+            if (catId == null) continue;
+            byCategory.computeIfAbsent(catId, _ -> new ArrayList<>()).add(c);
+        }
+
+        Map<Integer, Integer> result = new HashMap<>();
+        int ghCalls = 0;
+
+        for (Map.Entry<Integer, List<Candidate>> entry : byCategory.entrySet()) {
+            Integer catId = entry.getKey();
+            List<Candidate> catPois = entry.getValue();
+
+            double minutes;
+            if (catPois.size() >= config.getCategoryGhMinPois()) {
+                try {
+                    minutes = ghClient.calculateRouteTime(buildPoints(p1, catPois, p2));
+                    ghCalls++;
+                } catch (Exception e) {
+                    log.warn("calculateCategoryTimes: GH failed for cat={}, fallback to haversine: {}",
+                            catId, e.getMessage());
+                    minutes = haversineRouteMinutes(p1, catPois, p2);
+                }
+            } else {
+                minutes = haversineRouteMinutes(p1, catPois, p2);
+            }
+
+            result.put(catId, (int) Math.round(minutes));
+        }
+
+        log.debug("calculateCategoryTimes: {} categories, {} GH calls", byCategory.size(), ghCalls);
+        return result;
+    }
+
     private void applySelection(SearchResponse response, List<Candidate> picked, PointDTO p1, PointDTO p2) {
         Set<Long> pickedIds = new HashSet<>();
         Map<Integer, Integer> selectedPerCategory = new LinkedHashMap<>();
-        Map<Integer, Double>  timePerCategory     = new LinkedHashMap<>();
         Set<Integer> usedCategoryIds = new HashSet<>();
 
         for (Candidate c : picked) {
@@ -290,23 +315,7 @@ public class OptimizationService {
             selectedPerCategory.merge(c.cat().getId(), 1, Integer::sum);
         }
 
-        if (!picked.isEmpty()) {
-            double e0 = GeoUtils.walkMinutes(GeoUtils.haversine(
-                    p1.getLat(), p1.getLon(), picked.getFirst().lat(), picked.getFirst().lon()));
-            timePerCategory.merge(picked.getFirst().cat().getId(), e0, Double::sum);
-
-            for (int i = 1; i < picked.size(); i++) {
-                double e = GeoUtils.walkMinutes(GeoUtils.haversine(
-                        picked.get(i - 1).lat(), picked.get(i - 1).lon(),
-                        picked.get(i).lat(),     picked.get(i).lon()));
-                timePerCategory.merge(picked.get(i).cat().getId(), e, Double::sum);
-            }
-
-            double last = GeoUtils.walkMinutes(GeoUtils.haversine(
-                    picked.getLast().lat(), picked.getLast().lon(),
-                    p2.getLat(), p2.getLon()));
-            timePerCategory.merge(picked.getLast().cat().getId(), last, Double::sum);
-        }
+        Map<Integer, Integer> timePerCategory = calculateCategoryTimes(picked, p1, p2);
 
         // оставляем POI только в первой подкатегории, где он встретился
         Set<Long> seenInRendering = new HashSet<>();
@@ -346,7 +355,7 @@ public class OptimizationService {
             cat.setSubcategories(resultSubs);
             cat.setSelected(selectedPerCategory.getOrDefault(cat.getId(), 0));
             cat.setTotalPois(totalInCat);
-            cat.setTime((int) Math.round(timePerCategory.getOrDefault(cat.getId(), 0.0)));
+            cat.setTime(timePerCategory.getOrDefault(cat.getId(), 0));
             resultCats.add(cat);
         }
 

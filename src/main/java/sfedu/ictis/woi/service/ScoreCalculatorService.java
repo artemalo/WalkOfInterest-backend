@@ -33,12 +33,14 @@ public class ScoreCalculatorService {
         StandardEvaluationContext ctx = new StandardEvaluationContext();
 
         double ratingScore = getRatingScore(poi);
+        double interestScore = getInterestScore(poi);
 
         boolean approved = poi.getStatus() != null && "APPROVED".equals(poi.getStatus().name());
         double statusMul = approved ? 1.0 : config.getWeights().getApprovedPenalty();
         double userMul   = poi.isUserGenerated() ? config.getWeights().getUserPoiPenalty() : 1.0;
 
         ctx.setVariable("corridor", clamp01(corridorScore));
+        ctx.setVariable("interest", clamp01(interestScore));
         ctx.setVariable("rating", ratingScore);
         ctx.setVariable("status", statusMul);
         ctx.setVariable("userBonus", userMul);
@@ -60,6 +62,13 @@ public class ScoreCalculatorService {
 
         // rating_score: sigmoid от ((rate−3) × log10(count+1))
         return sigmoid((rate - 3.0) * Math.log10(count + 1.0));
+    }
+
+    private double getInterestScore(PoiDTO poi) {
+        if (poi.getInterest() == null) {
+            return config.getDefaults().getInterest();
+        }
+        return poi.getInterest();
     }
 
     private Expression getExpression() {

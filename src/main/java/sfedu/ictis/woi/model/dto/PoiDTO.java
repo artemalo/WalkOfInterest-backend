@@ -27,5 +27,8 @@ public class PoiDTO {
     private boolean userGenerated;
 
     @JsonIgnore
+    private Double interest = 0.0;
+
+    @JsonIgnore
     private Double score = 0.0;
 }

@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
  * SpEL-формула:
  *   #corridor   - [0, 1], близость к коридору A↔B
  *   #rating     - [0, 1], нормализованный рейтинг
+ *   #interest   - [0..1], туристическая интересность подкатегории (1.0 = музей, 0.05 = аптека)
  *   #status     - 1 для APPROVED, иначе approvedPenalty
  *   #userBonus  - 1 для не-user-сгенерированных, иначе userPoiPenalty
  */
@@ -53,9 +54,12 @@ public class OptimizerConfig {
     private double diversityBonus = 0.05;
 
     /**
-     * Финальная формула score POI
+     * Минимальное число POI в категории, чтобы считать cat.time через GraphHopper
+     * Меньше - считаем по haversine
      */
-    private String poiFormula = "(#corridor * 0.55 + #rating * 0.30) * #status * #userBonus";
+    private int categoryGhMinPois = 3;
+
+    private String poiFormula = "(#corridor * 0.30 + #interest * 0.40 + #rating * 0.20) * #status * #userBonus";
 
     private Defaults defaults = new Defaults();
     private Weights weights = new Weights();
@@ -64,6 +68,7 @@ public class OptimizerConfig {
     public static class Defaults {
         private double rate = 3.0;
         private int count = 0;
+        private double interest = 0.30;
     }
 
     @Data

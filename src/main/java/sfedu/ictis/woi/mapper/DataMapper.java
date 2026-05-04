@@ -27,11 +27,18 @@ public class DataMapper {
                             .distinct()
                             .toList();
 
-                    return new RichPoi(winner, tags);
+                    double maxInterest = list.stream()
+                            .map(FlatPoiProjection::getInterest)
+                            .filter(Objects::nonNull)
+                            .mapToDouble(Double::doubleValue)
+                            .max()
+                            .orElse(0.0);
+
+                    return new RichPoi(winner, tags, maxInterest);
                 })
                 .toList();
 
-        // 3. Собираем иерархию: Category -> SubCategory -> Poi
+        // Category -> SubCategory -> Poi
         return richPois.stream()
                 .collect(Collectors.groupingBy(
                         rp -> new CategoryKey(
@@ -81,6 +88,8 @@ public class DataMapper {
                                             poi.setStatus(rp.winner().getStatus());
                                             poi.setUserGenerated(rp.winner().getUserId() != null);
 
+                                            poi.setInterest(rp.maxInterest());
+
                                             poi.setSelected(false);
                                             poi.setScore(0.0);
                                             return poi;
@@ -116,6 +125,6 @@ public class DataMapper {
 
     private record CategoryKey(Integer id, String name, String description, String icon) {}
     private record SubCategoryKey(Integer id, String name, String description, String icon) {}
-    private record RichPoi(FlatPoiProjection winner, List<TagDTO> allTags) {}
+    private record RichPoi(FlatPoiProjection winner, List<TagDTO> allTags, double maxInterest) {}
 
 }
