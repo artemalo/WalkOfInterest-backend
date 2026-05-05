@@ -55,6 +55,13 @@ public class OptimizationService {
         int maxTime = request.getMaxTime();
         double hardBudget = maxTime * config.getHardTimeFactor();
 
+        final int serverCap = config.getMaxTotalPois();
+        final int effectiveMaxPois = (request.getMaxPoi() != null)
+                ? Math.max(1, Math.min(request.getMaxPoi(), serverCap))
+                : serverCap;
+        log.info("optimize: maxTime={}min, clientMaxPoi={}, serverCap={}, effectiveMaxPois={}",
+                maxTime, request.getMaxPoi(), serverCap, effectiveMaxPois);
+
         double directWalkMin = ghClient.calculateRouteTime(List.of(p1, p2));
         double minAcceptable = directWalkMin * config.getMinTimeFactor();
 
@@ -97,7 +104,7 @@ public class OptimizationService {
         inEllipse.sort(Comparator.comparingDouble(Candidate::score).reversed());
 
         // (<= hardBudget)
-        RouteAssembler assembler = new RouteAssembler(p1, p2, hardBudget, config.getMaxTotalPois());
+        RouteAssembler assembler = new RouteAssembler(p1, p2, hardBudget, effectiveMaxPois);
         List<Candidate> picked = assembler.assemble(inEllipse);
         log.info("optimize: after assembler = {} POIs (hardBudget={}min)", picked.size(), (int) hardBudget);
 
@@ -106,7 +113,7 @@ public class OptimizationService {
 
         // (<= maxTime) selected=true
         // возвращается уже в правильном порядке прохождения
-        List<Candidate> defaultSelected = selectDefault(picked, p1, p2, maxTime);
+        List<Candidate> defaultSelected = selectDefault(picked, p1, p2, maxTime, effectiveMaxPois);
         log.info("optimize: default selected = {} POIs (maxTime={}min)", defaultSelected.size(), maxTime);
 
         applySelection(response, picked, defaultSelected, p1, p2);
@@ -115,13 +122,18 @@ public class OptimizationService {
                 System.currentTimeMillis() - startTs, picked.size(), all.size(), defaultSelected.size());
     }
 
-    private List<Candidate> selectDefault(List<Candidate> picked, PointDTO p1, PointDTO p2, int maxTime) {
+    private List<Candidate> selectDefault(List<Candidate> picked,
+                                          PointDTO p1,
+                                          PointDTO p2,
+                                          int maxTime,
+                                          int maxPois
+    ) {
         if (picked.isEmpty()) return new ArrayList<>();
 
         List<Candidate> sortedByScore = new ArrayList<>(picked);
         sortedByScore.sort(Comparator.comparingDouble(Candidate::score).reversed());
 
-        RouteAssembler softAssembler = new RouteAssembler(p1, p2, maxTime, config.getMaxTotalPois());
+        RouteAssembler softAssembler = new RouteAssembler(p1, p2, maxTime, maxPois);
         List<Candidate> defaultSelected = softAssembler.assemble(sortedByScore);
 
         return validateAndTrim(defaultSelected, p1, p2, maxTime);

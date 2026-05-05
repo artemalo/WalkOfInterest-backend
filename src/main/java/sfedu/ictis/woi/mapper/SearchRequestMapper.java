@@ -12,7 +12,8 @@ public class SearchRequestMapper {
         return new SearchRequestDTO(
                 request.getP1(),
                 request.getP2(),
-                request.getMaxTime()
+                request.getMaxTime(),
+                request.getMaxPoi()
         );
     }
 }
