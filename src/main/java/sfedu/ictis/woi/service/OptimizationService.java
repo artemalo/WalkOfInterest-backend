@@ -89,7 +89,6 @@ public class OptimizationService {
         }
 
         scoreCandidates(inEllipse, p1, p2);
-
         applyDiversityBonus(inEllipse);
 
         inEllipse.sort(Comparator.comparingDouble(Candidate::score).reversed());
@@ -101,10 +100,25 @@ public class OptimizationService {
         picked = validateAndTrim(picked, p1, p2, hardBudget);
         log.info("optimize: after GH validation = {} POIs", picked.size());
 
-        applySelection(response, picked, p1, p2);
+        List<Candidate> defaultSelected = selectDefault(picked, p1, p2, maxTime);
+        log.info("optimize: default selected = {} POIs (maxTime={}min)", defaultSelected.size(), maxTime);
 
-        log.info("optimize: done in {}ms, picked={}/{}",
-                System.currentTimeMillis() - startTs, picked.size(), all.size());
+        applySelection(response, picked, defaultSelected, p1, p2);
+
+        log.info("optimize: done in {}ms, picked={}/{}, default-selected={}",
+                System.currentTimeMillis() - startTs, picked.size(), all.size(), defaultSelected.size());
+    }
+
+    private List<Candidate> selectDefault(List<Candidate> picked, PointDTO p1, PointDTO p2, int maxTime) {
+        if (picked.isEmpty()) return new ArrayList<>();
+
+        List<Candidate> sortedByScore = new ArrayList<>(picked);
+        sortedByScore.sort(Comparator.comparingDouble(Candidate::score).reversed());
+
+        RouteAssembler softAssembler = new RouteAssembler(p1, p2, maxTime, config.getMaxTotalPois());
+        List<Candidate> defaultSelected = softAssembler.assemble(sortedByScore);
+
+        return validateAndTrim(defaultSelected, p1, p2, maxTime);
     }
 
 
@@ -132,7 +146,6 @@ public class OptimizationService {
                     p1.getLat(), p1.getLon(),
                     p2.getLat(), p2.getLon()
             );
-            // corridor_score = exp(−detour²/(2σ²)) - нормальное спадание | (0, 1]
             double corridor = Math.exp(-(detour * detour) / (2.0 * sigma * sigma));
             double base = scoreCalculator.calculate(c.poi(), corridor);
             c.setScore(base);
@@ -156,26 +169,26 @@ public class OptimizationService {
     }
 
     /**
-     * haversine соврал - выкидываем худшие POI по метрике score/time_share, пока не уложимся
+     * реальное время > budget - выкидываем POI с худшим score/saved_minutes
      */
-    private List<Candidate> validateAndTrim(List<Candidate> picked, PointDTO p1, PointDTO p2, double hardBudget) {
-        if (picked.isEmpty()) return picked;
+    private List<Candidate> validateAndTrim(List<Candidate> route, PointDTO p1, PointDTO p2, double budgetMinutes) {
+        if (route.isEmpty()) return route;
 
         double realMinutes;
         try {
-            realMinutes = ghClient.calculateRouteTime(buildPoints(p1, picked, p2));
+            realMinutes = ghClient.calculateRouteTime(buildPoints(p1, route, p2));
         } catch (Exception e) {
             log.warn("GH validation failed, trusting haversine estimate: {}", e.getMessage());
-            return picked;
+            return route;
         }
 
-        if (realMinutes <= hardBudget) {
-            return picked;
+        if (realMinutes <= budgetMinutes) {
+            return route;
         }
 
-        log.info("optimize: GH says {}min > hard {}min, trimming...", (int) realMinutes, (int) hardBudget);
+        log.info("validateAndTrim: GH says {}min > budget {}min, trimming...", (int) realMinutes, (int) budgetMinutes);
 
-        List<Candidate> mutable = new ArrayList<>(picked);
+        List<Candidate> mutable = new ArrayList<>(route);
 
         double initialHaversine = haversineRouteMinutes(p1, mutable, p2);
         if (initialHaversine <= 0) return mutable;
@@ -185,7 +198,7 @@ public class OptimizationService {
         while (!mutable.isEmpty()) {
             double currentHav = haversineRouteMinutes(p1, mutable, p2);
             double estimatedReal = currentHav * ghToHavRatio;
-            if (estimatedReal <= hardBudget) break;
+            if (estimatedReal <= budgetMinutes) break;
 
             int worstIdx = pickWorstByScorePerMinute(mutable, p1, p2);
             if (worstIdx < 0) break;
@@ -195,13 +208,13 @@ public class OptimizationService {
         if (!mutable.isEmpty()) {
             try {
                 double check = ghClient.calculateRouteTime(buildPoints(p1, mutable, p2));
-                log.info("optimize: GH after trim = {}min (target hard={}min)", (int) check, (int) hardBudget);
+                log.info("validateAndTrim: GH after trim = {}min (target budget={}min)", (int) check, (int) budgetMinutes);
 
-                if (check > hardBudget) {
+                if (check > budgetMinutes) {
                     double newRatio = check / Math.max(1e-6, haversineRouteMinutes(p1, mutable, p2));
                     while (!mutable.isEmpty()) {
                         double currentHav = haversineRouteMinutes(p1, mutable, p2);
-                        if (currentHav * newRatio <= hardBudget) break;
+                        if (currentHav * newRatio <= budgetMinutes) break;
                         int worstIdx = pickWorstByScorePerMinute(mutable, p1, p2);
                         if (worstIdx < 0) break;
                         mutable.remove(worstIdx);
@@ -268,9 +281,9 @@ public class OptimizationService {
         return pts;
     }
 
-    private Map<Integer, Integer> calculateCategoryTimes(List<Candidate> picked, PointDTO p1, PointDTO p2) {
+    private Map<Integer, Integer> calculateCategoryTimes(List<Candidate> source, PointDTO p1, PointDTO p2) {
         Map<Integer, List<Candidate>> byCategory = new LinkedHashMap<>();
-        for (Candidate c : picked) {
+        for (Candidate c : source) {
             Integer catId = c.cat().getId();
             if (catId == null) continue;
             byCategory.computeIfAbsent(catId, _ -> new ArrayList<>()).add(c);
@@ -304,18 +317,26 @@ public class OptimizationService {
         return result;
     }
 
-    private void applySelection(SearchResponse response, List<Candidate> picked, PointDTO p1, PointDTO p2) {
+    private void applySelection(SearchResponse response,
+                                List<Candidate> picked,
+                                List<Candidate> defaultSelected,
+                                PointDTO p1, PointDTO p2) {
         Set<Long> pickedIds = new HashSet<>();
-        Map<Integer, Integer> selectedPerCategory = new LinkedHashMap<>();
         Set<Integer> usedCategoryIds = new HashSet<>();
-
         for (Candidate c : picked) {
             pickedIds.add(c.id());
             usedCategoryIds.add(c.cat().getId());
+        }
+
+        Set<Long> defaultSelectedIds = new HashSet<>();
+        Map<Integer, Integer> selectedPerCategory = new LinkedHashMap<>();
+        for (Candidate c : defaultSelected) {
+            defaultSelectedIds.add(c.id());
             selectedPerCategory.merge(c.cat().getId(), 1, Integer::sum);
         }
 
-        Map<Integer, Integer> timePerCategory = calculateCategoryTimes(picked, p1, p2);
+        // cat.time считается для selected=true POI
+        Map<Integer, Integer> timePerCategory = calculateCategoryTimes(defaultSelected, p1, p2);
 
         // оставляем POI только в первой подкатегории, где он встретился
         Set<Long> seenInRendering = new HashSet<>();
@@ -334,11 +355,11 @@ public class OptimizationService {
                     List<PoiDTO> subResultPois = new ArrayList<>();
                     for (PoiDTO poi : sub.getPois()) {
                         if (poi.getId() == null) continue;
-                        boolean isSelected = pickedIds.contains(poi.getId());
-                        if (!isSelected) continue;
+                        if (!pickedIds.contains(poi.getId())) continue;
                         if (!seenInRendering.add(poi.getId())) continue;
 
-                        poi.setSelected(true);
+                        boolean isDefault = defaultSelectedIds.contains(poi.getId());
+                        poi.setSelected(isDefault);
                         subResultPois.add(poi);
                         totalInCat++;
                     }
