@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import sfedu.ictis.woi.exception.ExternalServiceException;
 import sfedu.ictis.woi.model.RouteResponse;
@@ -60,7 +59,7 @@ public class GraphHopperClient implements GraphHopperRequest {
 
     @Override
     public long calculateRouteTime(List<PointDTO> pois) {
-        JsonNode response = executeRouteRequest(pois, true, false, false, 1).block();
+        JsonNode response = executeRouteRequest(pois, false, false, false, 1).block();
         if (response == null || response.path("paths").isEmpty()) {
             throw new ExternalServiceException(SERVICE_NAME, "Failed to calculate multi-point route time");
         }
@@ -68,7 +67,8 @@ public class GraphHopperClient implements GraphHopperRequest {
     }
 
     public RouteResponse calculateRoute(List<PointDTO> points) {
-        JsonNode response = executeRouteRequest(points, true, true, false, 1).block();
+        // optimize=false: точки уже в правильном порядке
+        JsonNode response = executeRouteRequest(points, false, true, false, 1).block();
         if (response == null || response.path("paths").isEmpty()) {
             throw new ExternalServiceException(SERVICE_NAME, "Не удалось рассчитать оптимальный маршрут");
         }
@@ -86,7 +86,7 @@ public class GraphHopperClient implements GraphHopperRequest {
             throw new ExternalServiceException(SERVICE_NAME, "Need at least 2 points for getRoutes");
         }
 
-        JsonNode mainResponse = executeRouteRequest(categories, true, true, false, 1).block();
+        JsonNode mainResponse = executeRouteRequest(categories, false, true, false, 1).block();
         if (mainResponse == null || mainResponse.path("paths").isEmpty()) {
             throw new ExternalServiceException(SERVICE_NAME, "Main route failed");
         }
@@ -190,11 +190,9 @@ public class GraphHopperClient implements GraphHopperRequest {
             JsonNode altPath = paths.get(i);
             List<PointDTO> altGeometry = mapToPointList(altPath.path("points").path("coordinates"));
             if (altGeometry.size() < 3) {
-                // короткая альтернатива - разница минимальная
                 continue;
             }
 
-            // Точка из середины альтернативной геометрии (лежит на альтернативной улице)
             PointDTO viaPoint = altGeometry.get(altGeometry.size() / 2);
 
             List<PointDTO> waypointsWithVia = new ArrayList<>(waypoints);

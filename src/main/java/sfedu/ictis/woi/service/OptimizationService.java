@@ -71,7 +71,10 @@ public class OptimizationService {
         List<Candidate> all = flatten(response);
         log.info("optimize: total POIs in response = {}", all.size());
 
-        all.forEach(c -> c.poi().setSelected(false));
+        all.forEach(c -> {
+            c.poi().setSelected(false);
+            c.poi().setOrder(null);
+        });
 
         double majorAxisM = (maxTime * GeoUtils.WALK_SPEED_M_PER_MIN) * config.getEllipseSafetyFactor();
         List<Candidate> inEllipse = all.stream()
@@ -93,6 +96,7 @@ public class OptimizationService {
 
         inEllipse.sort(Comparator.comparingDouble(Candidate::score).reversed());
 
+        // (<= hardBudget)
         RouteAssembler assembler = new RouteAssembler(p1, p2, hardBudget, config.getMaxTotalPois());
         List<Candidate> picked = assembler.assemble(inEllipse);
         log.info("optimize: after assembler = {} POIs (hardBudget={}min)", picked.size(), (int) hardBudget);
@@ -100,6 +104,8 @@ public class OptimizationService {
         picked = validateAndTrim(picked, p1, p2, hardBudget);
         log.info("optimize: after GH validation = {} POIs", picked.size());
 
+        // (<= maxTime) selected=true
+        // возвращается уже в правильном порядке прохождения
         List<Candidate> defaultSelected = selectDefault(picked, p1, p2, maxTime);
         log.info("optimize: default selected = {} POIs (maxTime={}min)", defaultSelected.size(), maxTime);
 
@@ -328,14 +334,15 @@ public class OptimizationService {
             usedCategoryIds.add(c.cat().getId());
         }
 
-        Set<Long> defaultSelectedIds = new HashSet<>();
+        // в defaultSelected (уже в правильном порядке)
+        Map<Long, Integer> orderByPoiId = new HashMap<>();
         Map<Integer, Integer> selectedPerCategory = new LinkedHashMap<>();
-        for (Candidate c : defaultSelected) {
-            defaultSelectedIds.add(c.id());
+        for (int i = 0; i < defaultSelected.size(); i++) {
+            Candidate c = defaultSelected.get(i);
+            orderByPoiId.put(c.id(), i);
             selectedPerCategory.merge(c.cat().getId(), 1, Integer::sum);
         }
 
-        // cat.time считается для selected=true POI
         Map<Integer, Integer> timePerCategory = calculateCategoryTimes(defaultSelected, p1, p2);
 
         // оставляем POI только в первой подкатегории, где он встретился
@@ -358,8 +365,14 @@ public class OptimizationService {
                         if (!pickedIds.contains(poi.getId())) continue;
                         if (!seenInRendering.add(poi.getId())) continue;
 
-                        boolean isDefault = defaultSelectedIds.contains(poi.getId());
-                        poi.setSelected(isDefault);
+                        Integer order = orderByPoiId.get(poi.getId());
+                        if (order != null) {
+                            poi.setSelected(true);
+                            poi.setOrder(order);
+                        } else {
+                            poi.setSelected(false);
+                            poi.setOrder(null);
+                        }
                         subResultPois.add(poi);
                         totalInCat++;
                     }

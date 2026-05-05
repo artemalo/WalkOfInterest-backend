@@ -1,6 +1,7 @@
 package sfedu.ictis.woi.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,6 +26,12 @@ public class PoiDTO {
 
     private PoiStatus status;
     private boolean userGenerated;
+
+    /**
+     * Позиция POI (selected=true) маршруте: 0,1,2,...
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Integer order;
 
     @JsonIgnore
     private Double interest = 0.0;
