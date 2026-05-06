@@ -2,6 +2,7 @@ package sfedu.ictis.woi.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -112,6 +113,21 @@ public class GlobalExceptionHandler {
     log.error("Непредвиденная ошибка сервера: ", ex);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ErrorResponse("INTERNAL_SERVER_ERROR", "Внутренняя ошибка сервера. Обратитесь к администратору."));
+  }
+
+  // 429 Too Many Requests - превышен лимит создания POI
+  @ExceptionHandler(RateLimitExceededException.class)
+  @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
+  public ResponseEntity<ErrorResponse> handleRateLimit(RateLimitExceededException ex) {
+    log.info("Rate limit exceeded: {}, retry after {}s", ex.getMessage(), ex.getRetryAfterSeconds());
+
+    Map<String, String> details = new HashMap<>();
+    details.put("retryAfterSeconds", String.valueOf(ex.getRetryAfterSeconds()));
+
+    return ResponseEntity
+            .status(HttpStatus.TOO_MANY_REQUESTS)
+            .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getRetryAfterSeconds()))
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage(), details));
   }
 
 

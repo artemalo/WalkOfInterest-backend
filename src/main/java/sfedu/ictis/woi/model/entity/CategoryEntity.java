@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "categories")
 @Getter
@@ -21,4 +24,7 @@ public class CategoryEntity {
 
     @Column(name = "category_icon")
     private String icon;
+
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+    private Set<SubcategoryEntity> subcategories = new HashSet<>();
 }

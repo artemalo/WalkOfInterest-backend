@@ -3,17 +3,19 @@ package sfedu.ictis.woi.model.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import sfedu.ictis.woi.model.entity.PoiStatus;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class PoiCardDTO {
+public class PoiNearbyDTO {
     private Long id;
     private String name;
     private String categoryName;
     private String subcategoryName;
+    private PointDTO point;
 
-    private PoiStatus status;
-    private String rejectionReason;
+    /**
+     * Расстояние до точки запроса в метрах
+     */
+    private Double distanceMeters;
 }

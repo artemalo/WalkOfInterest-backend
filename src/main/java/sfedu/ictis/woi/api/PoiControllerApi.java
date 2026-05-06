@@ -7,11 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import sfedu.ictis.woi.model.dto.PoiAddDTO;
-import sfedu.ictis.woi.model.dto.PoiCardDTO;
-import sfedu.ictis.woi.model.dto.PoiInfoDTO;
-import sfedu.ictis.woi.model.dto.ReviewDTO;
-import sfedu.ictis.woi.model.dto.ReviewRequestDTO;
+import sfedu.ictis.woi.model.dto.*;
 
 import java.util.List;
 
@@ -33,7 +29,6 @@ public interface PoiControllerApi {
     @GetMapping("/{id}/reviews")
     List<ReviewDTO> getReviewsByPoiId(
             @PathVariable Long id,
-
             @Parameter(description = "Язык ответа (ru/en)")
             @RequestParam(defaultValue = "ru") String lang
     );
@@ -67,6 +62,24 @@ public interface PoiControllerApi {
     );
 
     @Operation(summary = "Создать новую POI")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "POI создана и отправлена на модерацию"),
+            @ApiResponse(responseCode = "401", description = "Не авторизован"),
+            @ApiResponse(responseCode = "409", description = "Точка уже существует рядом (без force=true)"),
+            @ApiResponse(responseCode = "429", description = "Превышен лимит создания (Retry-After в заголовке)")
+    })
     @PostMapping
     PoiInfoDTO createPoi(@RequestBody PoiAddDTO poi);
+
+    @Operation(summary = "Проверить наличие похожих POI рядом")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Результат проверки"),
+            @ApiResponse(responseCode = "401", description = "Не авторизован")
+    })
+    @PostMapping("/check")
+    PoiNearbyCheckResponseDTO checkNearby(
+            @Valid @RequestBody PoiNearbyCheckRequestDTO request,
+            @Parameter(description = "Язык ответа (ru/en)")
+            @RequestParam(defaultValue = "ru") String lang
+    );
 }

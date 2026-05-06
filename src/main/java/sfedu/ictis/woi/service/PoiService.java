@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.locationtech.jts.geom.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -11,11 +12,13 @@ import org.springframework.stereotype.Service;
 import sfedu.ictis.woi.exception.AccessDeniedException;
 import sfedu.ictis.woi.exception.InvalidCredentialsException;
 import sfedu.ictis.woi.exception.PoiAlreadyExistsException;
+import sfedu.ictis.woi.exception.RateLimitExceededException;
 import sfedu.ictis.woi.exception.ResourceNotFoundException;
 import sfedu.ictis.woi.mapper.PoiMapper;
 import sfedu.ictis.woi.mapper.UserMapper;
 import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.model.entity.*;
+import sfedu.ictis.woi.projection.PoiNearbyProjection;
 import sfedu.ictis.woi.repository.*;
 
 import java.util.*;
@@ -25,6 +28,11 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PoiService {
+    // Радиус для /check - 50м, чтобы показать "похожие места рядом".
+    // Не путать с existsNearby (5м) - это защита от точечных дублей в createPoi.
+    private static final double CHECK_RADIUS_METERS_DEFAULT = 50.0;
+    private static final int CHECK_LIMIT = 10;
+
     private final PoiRepository poiRepository;
     private final UserRepository userRepository;
     private final SubcategoryRepository subcategoryRepository;
@@ -32,6 +40,11 @@ public class PoiService {
     private final ReviewRepository reviewRepository;
     private final ReviewLikeRepository reviewLikeRepository;
     private final ReviewLikeService reviewLikeService;
+
+    private final RateLimiterService rateLimiterService;
+
+    @Value("${app.poi.check.radius-meters:50}")
+    private double checkRadiusMeters;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -51,15 +64,48 @@ public class PoiService {
                 .collect(Collectors.toList());
     }
 
+    public PoiNearbyCheckResponseDTO checkNearby(PointDTO point, String lang, Authentication authentication) {
+        getAuthenticatedUser(authentication);
+
+        if (point == null || point.getLat() == null || point.getLon() == null) {
+            throw new IllegalArgumentException("Координаты обязательны");
+        }
+
+        double radius = checkRadiusMeters > 0 ? checkRadiusMeters : CHECK_RADIUS_METERS_DEFAULT;
+
+        List<PoiNearbyProjection> projections = poiRepository.findNearbyPois(
+                point.getLon(),
+                point.getLat(),
+                radius,
+                lang != null ? lang : "ru",
+                CHECK_LIMIT
+        );
+
+        List<PoiNearbyDTO> pois = projections.stream()
+                .map(PoiMapper::mapNearbyToDTO)
+                .toList();
+
+        return new PoiNearbyCheckResponseDTO(!pois.isEmpty(), pois);
+    }
+
     @Transactional
     public PoiInfoDTO createPoi(PoiAddDTO dto, Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);
+
+        if (!rateLimiterService.tryConsumePoiCreate(user.getId())) {
+            long retryAfter = rateLimiterService.getPoiCreateRetryAfterSeconds(user.getId());
+            throw new RateLimitExceededException(
+                    "Вы добавили слишком много мест сегодня. Попробуйте позже.",
+                    retryAfter
+            );
+        }
 
         if (dto.getPoint() == null || dto.getPoint().getLat() == null || dto.getPoint().getLon() == null) {
             throw new IllegalArgumentException("Координаты обязательны");
         }
 
-        if (poiRepository.existsNearby(dto.getPoint().getLon(), dto.getPoint().getLat())) {
+        boolean force = Boolean.TRUE.equals(dto.getForce());
+        if (!force && poiRepository.existsNearby(dto.getPoint().getLon(), dto.getPoint().getLat())) {
             throw new PoiAlreadyExistsException("Точка уже существует в этой локации или слишком близко");
         }
 
@@ -68,6 +114,7 @@ public class PoiService {
         entity.setGeom(point);
         entity.setUser(user);
         entity.setStatus(PoiStatus.PENDING);
+        entity.setRejectionReason(null);
 
         updateSubcategories(entity, dto.getSubcategoriesId());
         addOrUpdateLocale(entity, dto.getLang(), dto.getName(), dto.getDescription());
@@ -82,9 +129,11 @@ public class PoiService {
         PoiEntity entity = poiRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
 
-         if (!entity.getUser().getId().equals(user.getId())) {
-             throw new AccessDeniedException("Вы не можете редактировать чужую точку");
-         }
+        if (user.getRole() != UserRole.ADMIN) {
+            if (!entity.getUser().getId().equals(user.getId())) {
+                throw new AccessDeniedException("Вы не можете редактировать чужую точку");
+            }
+        }
 
         if (dto.getPoint() != null && dto.getPoint().getLat() != null && dto.getPoint().getLon() != null) {
             Point point = geometryFactory.createPoint(new Coordinate(dto.getPoint().getLon(), dto.getPoint().getLat()));
@@ -95,12 +144,11 @@ public class PoiService {
         addOrUpdateLocale(entity, dto.getLang(), dto.getName(), dto.getDescription());
 
         entity.setStatus(PoiStatus.PENDING);
+        entity.setRejectionReason(null);
 
         PoiEntity savedEntity = poiRepository.save(entity);
         return PoiMapper.mapToInfoDTO(savedEntity, dto.getLang());
     }
-
-
 
     public List<PoiAdminDTO> getPoisByStatus(PoiStatus status, Pageable pageable, String targetLang) {
         Page<PoiEntity> poiPage = poiRepository.findAllByStatusIncludingDeleted(status, pageable);
@@ -110,14 +158,23 @@ public class PoiService {
     }
 
     @Transactional
-    public void updatePoiStatus(Long id, PoiStatus status) {
+    public void updatePoiStatus(Long id, PoiStatus status, String rejectionReason) {
         PoiEntity entity = poiRepository.findByIdIncludingDeleted(id)
                 .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
 
         entity.setStatus(status);
+        if (status == PoiStatus.REJECTED) {
+            entity.setRejectionReason(
+                    rejectionReason != null && !rejectionReason.isBlank()
+                            ? rejectionReason
+                            : "Причина не указана"
+            );
+        } else {
+            entity.setRejectionReason(null);
+        }
         poiRepository.save(entity);
 
-        log.warn("[{}] poi_id: {}",status, entity.getId());
+        log.warn("[{}] poi_id: {}", status, entity.getId());
     }
 
     @Transactional

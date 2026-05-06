@@ -6,6 +6,7 @@ import org.locationtech.jts.geom.Point;
 import sfedu.ictis.woi.exception.PoiNotPointException;
 import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.model.entity.*;
+import sfedu.ictis.woi.projection.PoiNearbyProjection;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -79,10 +80,27 @@ public class PoiMapper {
                 dto.setCategoryName(sub.getCategory().getName());
             }
         }
+
+        dto.setStatus(entity.getStatus());
+        if (entity.getStatus() == PoiStatus.REJECTED) {
+            dto.setRejectionReason(entity.getRejectionReason());
+        }
+
         return dto;
     }
 
-
+    public static PoiNearbyDTO mapNearbyToDTO(PoiNearbyProjection p) {
+        PoiNearbyDTO dto = new PoiNearbyDTO();
+        dto.setId(p.getId());
+        dto.setName(p.getName());
+        dto.setCategoryName(p.getCategoryName());
+        dto.setSubcategoryName(p.getSubcategoryName());
+        if (p.getLat() != null && p.getLon() != null) {
+            dto.setPoint(new PointDTO(p.getLat(), p.getLon()));
+        }
+        dto.setDistanceMeters(p.getDistanceMeters());
+        return dto;
+    }
 
     private static PointDTO extractPoint(Geometry geom, Long poiId) {
         if (geom == null || geom.isEmpty()) {
@@ -145,12 +163,6 @@ public class PoiMapper {
 
     private static UserDTO mapToUserDTO(UserEntity user) {
         if (user == null) return null;
-        return new UserDTO(
-                user.getId(),
-                user.getUsername(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getCreatedAt()
-        );
+        return UserMapper.mapToUserDTO(user);
     }
 }

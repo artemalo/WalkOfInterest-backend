@@ -31,8 +31,9 @@ public class AdminController implements AdminControllerApi {
     @PatchMapping("/{id}/status")
     public void updatePoiStatus(
             @PathVariable Long id,
-            @RequestParam PoiStatus request
+            @RequestParam PoiStatus request,
+            @RequestParam(required = false) String rejectionReason
     ) {
-        poiService.updatePoiStatus(id, request);
+        poiService.updatePoiStatus(id, request, rejectionReason);
     }
 }

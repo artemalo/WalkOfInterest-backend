@@ -11,7 +11,9 @@ import sfedu.ictis.woi.model.entity.PoiEntity;
 import sfedu.ictis.woi.model.entity.PoiStatus;
 import sfedu.ictis.woi.model.entity.UserEntity;
 import sfedu.ictis.woi.projection.FlatPoiProjection;
+import sfedu.ictis.woi.projection.PoiNearbyProjection;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -78,7 +80,68 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
         """, nativeQuery = true)
     boolean existsNearby(@Param("lon") Double lon, @Param("lat") Double lat);
 
+    /**
+     * Поиск ближайших точек в заданном радиусе (метры).
+     * Возвращаются только не удаленные, статусы APPROVED и PENDING
+     */
+    @Query(value = """
+        SELECT
+            p.id AS id,
+            pl.poi_name AS name,
+            c.category_name AS categoryName,
+            s.subcategory_name AS subcategoryName,
+            ST_Y(ST_Centroid(p.geom)) AS lat,
+            ST_X(ST_Centroid(p.geom)) AS lon,
+            ST_Distance(
+                p.geom::geography,
+                ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography
+            ) AS distanceMeters
+        FROM pois p
+        LEFT JOIN poi_system_tags pst ON p.id = pst.poi_id
+        LEFT JOIN subcategories s ON pst.subcategory_id = s.id
+        LEFT JOIN categories c ON s.category_id = c.id
+        LEFT JOIN LATERAL (
+            SELECT poi_name
+            FROM pois_langues
+            WHERE poi_id = p.id
+            ORDER BY (
+                CASE
+                    WHEN langue = :lang THEN 1
+                    WHEN langue = 'default' THEN 2
+                    WHEN langue = 'en' THEN 3
+                    ELSE 4
+                END
+            )
+            LIMIT 1
+        ) pl ON true
+        WHERE p.deleted_at IS NULL
+          AND p.status IN ('APPROVED', 'PENDING')
+          AND ST_DWithin(
+              p.geom::geography,
+              ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography,
+              :radiusMeters
+          )
+        ORDER BY distanceMeters ASC
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<PoiNearbyProjection> findNearbyPois(
+            @Param("lon") Double lon,
+            @Param("lat") Double lat,
+            @Param("radiusMeters") Double radiusMeters,
+            @Param("lang") String lang,
+            @Param("limit") int limit
+    );
 
+    /**
+     * Сколько POI пользователь создал начиная с указанного времени
+     * rate-limit fallback
+     */
+    @Query("""
+        SELECT COUNT(p) FROM PoiEntity p
+        WHERE p.user = :user
+          AND p.lastUpdate >= :since
+        """)
+    long countByUserSince(@Param("user") UserEntity user, @Param("since") LocalDateTime since);
 
     @Query(value = "SELECT * FROM pois WHERE id = :id", nativeQuery = true)
     Optional<PoiEntity> findByIdIncludingDeleted(@Param("id") Long id);

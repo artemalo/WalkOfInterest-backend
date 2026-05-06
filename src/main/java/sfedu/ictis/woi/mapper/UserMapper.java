@@ -2,6 +2,7 @@ package sfedu.ictis.woi.mapper;
 
 import sfedu.ictis.woi.model.dto.ReactionType;
 import sfedu.ictis.woi.model.dto.ReviewDTO;
+import sfedu.ictis.woi.model.dto.UserDTO;
 import sfedu.ictis.woi.model.dto.UserProfileDTO;
 import sfedu.ictis.woi.model.entity.PoiLanguesEntity;
 import sfedu.ictis.woi.model.entity.ReviewEntity;
@@ -75,5 +76,15 @@ public class UserMapper {
             if (l.getLangue().equals("en")) return l.getPoiName();
         }
         return locales.getFirst().getPoiName();
+    }
+
+    public static UserDTO mapToUserDTO(UserEntity user) {
+        return new UserDTO(
+                user.getId(),
+                user.getUsername(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getCreatedAt()
+        );
     }
 }

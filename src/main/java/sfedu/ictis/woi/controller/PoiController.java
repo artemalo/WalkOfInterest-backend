@@ -5,27 +5,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.api.PoiControllerApi;
-import sfedu.ictis.woi.model.dto.PoiAddDTO;
-import sfedu.ictis.woi.model.dto.PoiCardDTO;
-import sfedu.ictis.woi.model.dto.PoiInfoDTO;
-import sfedu.ictis.woi.model.dto.ReviewDTO;
-import sfedu.ictis.woi.model.dto.ReviewRequestDTO;
+import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.service.PoiService;
 
 import java.util.List;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/pois")
+@RequiredArgsConstructor
 public class PoiController implements PoiControllerApi {
     private final PoiService poiService;
-
-    @PostMapping
-    public PoiInfoDTO createPoi(
-            @RequestBody PoiAddDTO poi
-    ) {
-        return poiService.createPoi(poi, SecurityContextHolder.getContext().getAuthentication());
-    }
 
     @GetMapping("/{id}")
     public PoiInfoDTO getPoiById(
@@ -74,5 +63,25 @@ public class PoiController implements PoiControllerApi {
             @RequestParam(defaultValue = "ru") String lang
     ) {
         return poiService.getUserPois(SecurityContextHolder.getContext().getAuthentication(), lang);
+    }
+
+    @PostMapping
+    public PoiInfoDTO createPoi(@RequestBody PoiAddDTO poi) {
+        return poiService.createPoi(
+                poi,
+                SecurityContextHolder.getContext().getAuthentication()
+        );
+    }
+
+    @PostMapping("/check")
+    public PoiNearbyCheckResponseDTO checkNearby(
+            @Valid @RequestBody PoiNearbyCheckRequestDTO request,
+            @RequestParam(defaultValue = "ru") String lang
+    ) {
+        return poiService.checkNearby(
+                request.getPoint(),
+                lang,
+                SecurityContextHolder.getContext().getAuthentication()
+        );
     }
 }

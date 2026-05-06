@@ -55,6 +55,9 @@ public class PoiEntity {
     @Column(name = "status", nullable = false)
     private PoiStatus status = PoiStatus.APPROVED;
 
+    @Column(name = "rejection_reason", length = 1000)
+    private String rejectionReason;
+
     @OneToMany(mappedBy = "poi", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PoiLanguesEntity> locales = new ArrayList<>();
 

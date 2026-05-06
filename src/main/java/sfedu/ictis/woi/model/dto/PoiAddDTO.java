@@ -18,4 +18,9 @@ public class PoiAddDTO {
     private String lang;
 
     private List<Integer> subcategoriesId;
+
+    /**
+     * Если true - пропустить проверку existsNearby
+     */
+    private Boolean force;
 }

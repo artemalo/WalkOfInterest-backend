@@ -34,12 +34,20 @@ public interface AdminControllerApi {
             @RequestParam(defaultValue = "default") String lang
     );
 
-    @Operation(summary = "Изменить статус POI")
+    @Operation(
+            summary = "Изменить статус POI",
+            description = "При status=REJECTED желательно передать rejectionReason - "
+                    + "его покажет пользователю экран 'Мои POI'. При остальных статусах "
+                    + "rejectionReason игнорируется и сбрасывается в null"
+    )
     @PatchMapping("/{id}/status")
     void updatePoiStatus(
             @PathVariable Long id,
 
             @Parameter(description = "Новый статус точки")
-            @RequestParam PoiStatus request
+            @RequestParam PoiStatus request,
+
+            @Parameter(description = "Причина отказа (только при REJECTED)")
+            @RequestParam(required = false) String rejectionReason
     );
 }
