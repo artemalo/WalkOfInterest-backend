@@ -84,4 +84,16 @@ public class PoiController implements PoiControllerApi {
                 SecurityContextHolder.getContext().getAuthentication()
         );
     }
+
+    @PostMapping("/{id}/supplement")
+    public PoiInfoDTO supplementPoi(
+            @PathVariable Long id,
+            @RequestBody PoiAddDTO poi
+    ) {
+        return poiService.supplementPoi(
+                id,
+                poi,
+                SecurityContextHolder.getContext().getAuthentication()
+        );
+    }
 }

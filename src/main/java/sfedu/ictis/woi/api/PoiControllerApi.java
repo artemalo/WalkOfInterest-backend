@@ -82,4 +82,22 @@ public interface PoiControllerApi {
             @Parameter(description = "Язык ответа (ru/en)")
             @RequestParam(defaultValue = "ru") String lang
     );
+
+    @Operation(
+            summary = "Дополнить существующую POI (merge-семантика)",
+            description = "Только добавляет подкатегории к существующим, " +
+                    "и заполняет name/description ТОЛЬКО если они пустые. " +
+                    "Никогда не затирает уже введённые данные. После операции POI уходит в PENDING."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "POI дополнена и отправлена на повторную модерацию"),
+            @ApiResponse(responseCode = "401", description = "Не авторизован"),
+            @ApiResponse(responseCode = "403", description = "Нет прав редактировать чужую точку"),
+            @ApiResponse(responseCode = "404", description = "POI не найден")
+    })
+    @PostMapping("/{id}/supplement")
+    PoiInfoDTO supplementPoi(
+            @PathVariable Long id,
+            @RequestBody PoiAddDTO poi
+    );
 }

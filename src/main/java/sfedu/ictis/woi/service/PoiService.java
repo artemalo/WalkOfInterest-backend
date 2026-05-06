@@ -130,7 +130,8 @@ public class PoiService {
                 .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
 
         if (user.getRole() != UserRole.ADMIN) {
-            if (!entity.getUser().getId().equals(user.getId())) {
+            UserEntity owner = entity.getUser();
+            if (owner != null && !owner.getId().equals(user.getId())) {
                 throw new AccessDeniedException("Вы не можете редактировать чужую точку");
             }
         }
@@ -142,6 +143,29 @@ public class PoiService {
 
         updateSubcategories(entity, dto.getSubcategoriesId());
         addOrUpdateLocale(entity, dto.getLang(), dto.getName(), dto.getDescription());
+
+        entity.setStatus(PoiStatus.PENDING);
+        entity.setRejectionReason(null);
+
+        PoiEntity savedEntity = poiRepository.save(entity);
+        return PoiMapper.mapToInfoDTO(savedEntity, dto.getLang());
+    }
+
+    @Transactional
+    public PoiInfoDTO supplementPoi(Long id, PoiAddDTO dto, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
+        PoiEntity entity = poiRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
+
+        if (user.getRole() != UserRole.ADMIN) {
+            UserEntity owner = entity.getUser();
+            if (owner != null && !owner.getId().equals(user.getId())) {
+                throw new AccessDeniedException("Вы не можете редактировать чужую точку");
+            }
+        }
+
+        addSubcategories(entity, dto.getSubcategoriesId());
+        fillEmptyLocale(entity, dto.getLang(), dto.getName(), dto.getDescription());
 
         entity.setStatus(PoiStatus.PENDING);
         entity.setRejectionReason(null);
@@ -281,6 +305,21 @@ public class PoiService {
         }
     }
 
+    private void addSubcategories(PoiEntity entity, List<Integer> subcategoryIds) {
+        if (subcategoryIds == null || subcategoryIds.isEmpty()) return;
+
+        Set<Integer> existingIds = entity.getSubcategories().stream()
+                .map(SubcategoryEntity::getId)
+                .collect(Collectors.toSet());
+
+        for (Integer subId : subcategoryIds) {
+            if (existingIds.contains(subId)) continue;
+            SubcategoryEntity sub = subcategoryRepository.findById(subId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Подкатегория не найдена: " + subId));
+            entity.getSubcategories().add(sub);
+        }
+    }
+
     private void addOrUpdateLocale(PoiEntity entity, String lang, String name, String description) {
         if (name == null && description == null) return;
 
@@ -299,5 +338,31 @@ public class PoiService {
 
         if (name != null) locale.setPoiName(name);
         if (description != null) locale.setPoiDescription(description);
+    }
+
+    private void fillEmptyLocale(PoiEntity entity, String lang, String name, String description) {
+        boolean hasName = name != null && !name.isBlank();
+        boolean hasDescription = description != null && !description.isBlank();
+        if (!hasName && !hasDescription) return;
+
+        String targetLang = lang != null ? lang : "default";
+
+        PoiLanguesEntity locale = entity.getLocales().stream()
+                .filter(l -> l.getLangue().equals(targetLang))
+                .findFirst()
+                .orElseGet(() -> {
+                    PoiLanguesEntity newLocale = new PoiLanguesEntity();
+                    newLocale.setPoi(entity);
+                    newLocale.setLangue(targetLang);
+                    entity.getLocales().add(newLocale);
+                    return newLocale;
+                });
+
+        if (hasName && (locale.getPoiName() == null || locale.getPoiName().isBlank())) {
+            locale.setPoiName(name);
+        }
+        if (hasDescription && (locale.getPoiDescription() == null || locale.getPoiDescription().isBlank())) {
+            locale.setPoiDescription(description);
+        }
     }
 }
