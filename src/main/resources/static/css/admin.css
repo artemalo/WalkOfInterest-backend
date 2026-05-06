@@ -1,3 +1,19 @@
+.page-head {
+    margin-bottom: 1.5em;
+}
+
+.page-head h2 {
+    margin: 0 0 0.3em 0;
+}
+
+.page-subtitle {
+    margin: 0;
+    color: #9b9b9b;
+    font-size: 0.9em;
+    max-width: 720px;
+}
+
+
 .tabs {
     display: flex;
     gap: 1em;
@@ -7,8 +23,14 @@
 .tab-btn {
     background-color: hsla(0, 0%, 0%, 0.4);
     color: #cfcfcf;
-    font-size: 1.1em;
+    font-size: 1.05em;
     padding: 0.5em 1.5em;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.tab-btn:hover {
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 .tab-btn.active {
@@ -29,87 +51,373 @@
     border-radius: 1em;
     overflow: hidden;
     transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.poi-item:hover {
+    border-color: rgba(255, 255, 255, 0.12);
+}
 
 .poi-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     padding: 1em;
     gap: 1em;
 }
 
-.poi-photo-placeholder {
-    width: 60px;
-    height: 60px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 0.5em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8em;
-    color: #9b9b9b;
-    text-align: center;
-    flex-shrink: 0;
-}
-
 .poi-info {
     flex-grow: 1;
+    min-width: 0;
+}
+
+.poi-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    flex-wrap: wrap;
+    margin-bottom: 0.4em;
 }
 
 .poi-info h3 {
-    margin: 0 0 0.2em 0;
-    font-size: 1.2em;
+    margin: 0;
+    font-size: 1.15em;
+    line-height: 1.3;
 }
 
-.poi-info p {
-    margin: 0;
-    font-size: 0.9em;
-    color: #cfcfcf;
+.poi-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4em;
+    color: #9b9b9b;
+    font-size: 0.85em;
 }
+
+.meta-sep {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.meta-item {
+    white-space: nowrap;
+}
+
+/* ===== Бейджи статусов ===== */
+.status-badge {
+    display: inline-block;
+    padding: 0.15em 0.7em;
+    border-radius: 1em;
+    font-size: 0.75em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    line-height: 1.6;
+}
+
+.status-badge.st-pending {
+    background-color: rgba(237, 216, 76, 0.15);
+    color: #edd84c;
+    border: 1px solid rgba(237, 216, 76, 0.3);
+}
+
+.status-badge.st-approved {
+    background-color: rgba(75, 143, 101, 0.18);
+    color: #6fbf85;
+    border: 1px solid rgba(75, 143, 101, 0.4);
+}
+
+.status-badge.st-rejected {
+    background-color: rgba(207, 45, 36, 0.18);
+    color: #f06a64;
+    border: 1px solid rgba(207, 45, 36, 0.4);
+}
+
+/* ===== Owner badge ===== */
+.owner-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3em;
+    padding: 0.1em 0.55em;
+    border-radius: 0.6em;
+    font-size: 0.8em;
+    cursor: help;
+}
+
+.owner-tag.owner-user {
+    background-color: rgba(75, 143, 140, 0.18);
+    color: #5fb6b1;
+    border: 1px solid rgba(75, 143, 140, 0.35);
+}
+
+.owner-tag.owner-system {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: #b8b8b8;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 
 .poi-actions {
     display: flex;
-    gap: 0.5em;
+    gap: 0.4em;
     align-items: center;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.btn {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: white;
+    padding: 0.45em 0.9em;
+    border-radius: 0.5em;
+    font-size: 0.85em;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-approve {
+    background-color: rgba(75, 143, 101, 0.25);
+    border-color: rgba(75, 143, 101, 0.5);
+    color: #6fbf85;
+}
+
+.btn-approve:hover {
+    background-color: rgba(75, 143, 101, 0.4);
+}
+
+.btn-reject {
+    background-color: rgba(207, 45, 36, 0.22);
+    border-color: rgba(207, 45, 36, 0.45);
+    color: #f06a64;
+}
+
+.btn-reject:hover {
+    background-color: rgba(207, 45, 36, 0.35);
+}
+
+.btn-ghost {
+    background-color: transparent;
+}
+
+.btn-danger {
+    background-color: #cf2d24;
+    color: white;
+    border-color: #cf2d24;
+}
+
+.btn-danger:hover {
+    background-color: #b32820;
 }
 
 .expand-btn {
     background-color: transparent;
-    font-size: 1.2em;
-    padding: 0.2em 0.5em;
+    font-size: 1.1em;
+    padding: 0.3em 0.55em;
     cursor: pointer;
+    color: #cfcfcf;
 }
 
+.expand-btn:hover {
+    color: white;
+}
 
+/* ===== Блок причины отклонения ===== */
+.rejection-block {
+    margin: 0 1em 1em 1em;
+    padding: 0.7em 0.9em;
+    background-color: rgba(207, 45, 36, 0.08);
+    border-left: 3px solid #cf2d24;
+    border-radius: 0.5em;
+}
+
+.rejection-label {
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #f06a64;
+    font-weight: 600;
+    margin-bottom: 0.3em;
+}
+
+.rejection-text {
+    color: #cfcfcf;
+    font-size: 0.95em;
+    word-break: break-word;
+}
+
+/* ===== Детали POI ===== */
 .poi-details {
     padding: 0 1em 1em 1em;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     display: none;
     color: #cfcfcf;
-    animation: fadeIn 0.3s;
+    animation: fadeIn 0.25s ease;
+}
+
+.poi-details.open {
+    display: block;
 }
 
 .poi-details p {
     margin: 0.5em 0;
+    word-break: break-word;
 }
 
 .tags-container {
     display: flex;
-    gap: 0.5em;
+    gap: 0.4em;
     flex-wrap: wrap;
     margin-top: 0.5em;
 }
 
 .tag-badge {
-    background-color: rgba(255, 255, 255, 0.15);
-    padding: 0.2em 0.6em;
+    background-color: rgba(255, 255, 255, 0.12);
+    padding: 0.2em 0.65em;
     border-radius: 1em;
     font-size: 0.8em;
     color: wheat;
 }
 
+.lang-tag {
+    background-color: rgba(255, 255, 255, 0.08);
+    padding: 0.1em 0.55em;
+    border-radius: 0.4em;
+    font-size: 0.85em;
+    color: #cfcfcf;
+}
+
+.map-link {
+    margin-left: 0.5em;
+    color: #5fb6b1;
+    text-decoration: none;
+    font-size: 0.9em;
+}
+
+.map-link:hover {
+    text-decoration: underline;
+}
+
+/* ===== Утилиты ===== */
+.muted {
+    color: #777;
+    font-style: italic;
+    font-size: 0.95em;
+}
+
+.empty-msg {
+    text-align: center;
+    color: #9b9b9b;
+    padding: 3em 1em;
+    font-size: 1.1em;
+}
+
+.error-msg {
+    color: #f06a64;
+    background: rgba(207, 45, 36, 0.1);
+    padding: 1em;
+    border-radius: 0.5em;
+    border-left: 3px solid #cf2d24;
+}
+
+.loader {
+    text-align: center;
+    color: #9b9b9b;
+    padding: 2em;
+}
+
+/* ===== Пагинация ===== */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5em;
+    margin-top: 2em;
+    color: #cfcfcf;
+}
+
+.pagination-controls button {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: white;
+    padding: 0.5em 1.2em;
+    border-radius: 0.5em;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pagination-controls button:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ===== Модалка отклонения ===== */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+    animation: fadeIn 0.15s ease;
+}
+
+.modal-backdrop.hidden {
+    display: none;
+}
+
+.modal {
+    background-color: #2b2e38;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1em;
+    padding: 1.5em;
+    width: min(540px, calc(100% - 2em));
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.modal h3 {
+    margin: 0 0 0.5em 0;
+    color: #f06a64;
+}
+
+.modal-hint {
+    color: #9b9b9b;
+    font-size: 0.9em;
+    margin: 0 0 1em 0;
+}
+
+.modal textarea {
+    width: 100%;
+    padding: 0.7em;
+    border-radius: 0.5em;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: white;
+    font-family: inherit;
+    font-size: 0.95em;
+    resize: vertical;
+    min-height: 5em;
+    box-sizing: border-box;
+}
+
+.modal textarea:focus {
+    outline: none;
+    border-color: #4B8F8C;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6em;
+    margin-top: 1em;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
+    to   { opacity: 1; transform: translateY(0); }
 }

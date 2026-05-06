@@ -44,6 +44,9 @@ public class PoiMapper {
         dto.setId(entity.getId());
         dto.setPoint(extractPoint(entity.getGeom(), entity.getId()));
         dto.setStatus(entity.getStatus());
+        dto.setRejectionReason(
+                entity.getStatus() == PoiStatus.REJECTED ? entity.getRejectionReason() : null
+        );
         dto.setCreatedUser(mapToUserDTO(entity.getUser()));
         dto.setLastUpdate(entity.getLastUpdate());
 

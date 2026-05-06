@@ -22,6 +22,7 @@ public class PoiAdminDTO {
     private List<TagNameDTO> tags;
 
     private PoiStatus status;
+    private String rejectionReason;
     private UserDTO createdUser;
 
     private LocalDateTime lastUpdate;

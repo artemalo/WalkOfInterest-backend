@@ -1,4 +1,15 @@
 const AUTH_TOKEN_KEY = 'accessToken';
+const PAGE_SIZE = 20;
+
+const STATUS_META = {
+    PENDING:  { label: 'В ожидании', cls: 'st-pending' },
+    APPROVED: { label: 'Одобрено',   cls: 'st-approved' },
+    REJECTED: { label: 'Отклонено',  cls: 'st-rejected' }
+};
+
+let currentStatus = 'PENDING';
+let currentPage = 0;
+let pendingRejectId = null;
 
 function parseJwt(token) {
     try {
@@ -45,6 +56,16 @@ async function adminFetch(url, options = {}) {
     }
 }
 
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
     if (token) {
@@ -59,27 +80,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabs = document.querySelectorAll('.tab-btn');
     const pageNumDisplay = document.getElementById('current-page-num');
 
-    let currentStatus = 'PENDING';
-    let currentPage = 0;
-    const PAGE_SIZE = 20;
-
-    // Инициализация данных
     fetchPois(currentStatus, currentPage);
 
-    // Логика вкладок
     tabs.forEach(tab => {
         tab.addEventListener('click', (e) => {
             tabs.forEach(t => t.classList.remove('active'));
-            e.target.classList.add('active');
+            e.currentTarget.classList.add('active');
 
-            currentStatus = e.target.getAttribute('data-status');
-            currentPage = 0; // Сброс на первую страницу при смене вкладки
+            currentStatus = e.currentTarget.getAttribute('data-status');
+            currentPage = 0;
             updatePageDisplay();
             fetchPois(currentStatus, currentPage);
         });
     });
 
-    // Пагинация
     window.changePage = function(direction) {
         if (currentPage + direction < 0) return;
         currentPage += direction;
@@ -94,13 +108,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function fetchPois(status, page = 0) {
         if (!container) return;
-        container.innerHTML = '<div class="loader">Загрузка...</div>';
+        container.innerHTML = '<div class="loader">Загрузка…</div>';
 
         adminFetch(`/api/admin/pois?request=${status}&page=${page}&size=${PAGE_SIZE}`)
             .then(res => res.json())
             .then(data => renderPois(data))
             .catch(err => {
-                container.innerHTML = `<p style="color:red">Ошибка загрузки данных: ${err.message}</p>`;
+                container.innerHTML = `<p class="error-msg">Ошибка загрузки данных: ${escapeHtml(err.message)}</p>`;
             });
     }
 
@@ -112,99 +126,161 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        pois.forEach(poi => {
-            const updateDate = poi.lastUpdate ? new Date(poi.lastUpdate).toLocaleString('ru-RU') : 'Неизвестно';
-            const author = poi.createdUser ? poi.createdUser.username : 'Система';
-            const tagsHtml = (poi.tags || []).map(tag =>
-                `<span class="tag-badge">${tag.subcategoryName}</span>`
-            ).join('');
+        pois.forEach(poi => container.appendChild(renderPoiCard(poi)));
+    }
 
-            const item = document.createElement('div');
-            item.className = 'poi-item';
+    function renderPoiCard(poi) {
+        const updateDate = poi.lastUpdate
+            ? new Date(poi.lastUpdate).toLocaleString('ru-RU')
+            : 'неизвестно';
 
-            const statusSelectHtml = `
-                <select id="status-select-${poi.id}" class="status-dropdown">
-                    <option value="" disabled selected>Изменить статус...</option>
-                    ${currentStatus !== 'APPROVED' ? `<option value="APPROVED">Одобрить</option>` : ''}
-                    ${currentStatus !== 'REJECTED' ? `<option value="REJECTED">Отклонить</option>` : ''}
-                    ${currentStatus !== 'PENDING' ? `<option value="PENDING">Вернуть в ожидание</option>` : ''}
-                </select>
-                <button class="btn-apply" onclick="applyStatusChange(${poi.id})">Применить</button>
-            `;
+        const ownerHtml = poi.createdUser
+            ? `<span class="owner-tag owner-user" title="POI создан пользователем">
+                   👤 ${escapeHtml(poi.createdUser.username)}
+               </span>`
+            : `<span class="owner-tag owner-system" title="OSM-импорт, владельца нет — может дополнять любой пользователь">
+                   🌐 OSM
+               </span>`;
 
-            item.innerHTML = `
-                <div class="poi-header">
-                    <div class="poi-photo-placeholder">
-                        ${poi.imagePath ? `<img src="${poi.imagePath}" alt="poi">` : 'Нет фото'}
+        const status = poi.status || currentStatus;
+        const statusMeta = STATUS_META[status] || { label: status, cls: '' };
+        const statusBadge = `<span class="status-badge ${statusMeta.cls}">${statusMeta.label}</span>`;
+
+        const tagsHtml = (poi.tags || [])
+            .map(t => `<span class="tag-badge">${escapeHtml(t.subcategoryName)}</span>`)
+            .join('') || '<span class="muted">подкатегорий нет</span>';
+
+        const point = poi.point || {};
+        const lat = point.lat != null ? point.lat.toFixed(6) : '—';
+        const lon = point.lon != null ? point.lon.toFixed(6) : '—';
+        const osmUrl = (point.lat != null && point.lon != null)
+            ? `https://www.openstreetmap.org/?mlat=${point.lat}&mlon=${point.lon}#map=17/${point.lat}/${point.lon}`
+            : null;
+
+        const rejectionBlock = (status === 'REJECTED' && poi.rejectionReason)
+            ? `<div class="rejection-block">
+                  <div class="rejection-label">Причина отклонения</div>
+                  <div class="rejection-text">${escapeHtml(poi.rejectionReason)}</div>
+               </div>`
+            : '';
+
+        const item = document.createElement('div');
+        item.className = 'poi-item';
+        item.dataset.poiId = poi.id;
+
+        item.innerHTML = `
+            <div class="poi-header">
+                <div class="poi-info">
+                    <div class="poi-title-row">
+                        <h3>${escapeHtml(poi.name) || '<span class="muted">POI без названия</span>'}</h3>
+                        ${statusBadge}
                     </div>
-                    <div class="poi-info">
-                        <h3>${poi.name || 'POI без названия'}</h3>
-                        <p>Автор: <b>${author}</b> | Обновлено: ${updateDate}</p>
-                    </div>
-                    <div class="poi-actions">
-                        ${statusSelectHtml}
-                        <button class="expand-btn" onclick="toggleDetails(this)">▼</button>
+                    <div class="poi-meta">
+                        ${ownerHtml}
+                        <span class="meta-sep">·</span>
+                        <span class="meta-item">Обновлено: ${updateDate}</span>
+                        <span class="meta-sep">·</span>
+                        <span class="meta-item">ID: ${poi.id}</span>
                     </div>
                 </div>
-                <div class="poi-details" style="display: none;">
-                    <hr>
-                    <p><strong>Описание:</strong> ${poi.description || 'Описание отсутствует.'}</p>
-                    <p><strong>Координаты:</strong> Широта, Долгота: ${poi.point.lat}, ${poi.point.lon}</p>
-                    <p><strong>Язык:</strong> <span class="lang-tag">${poi.lang || 'По умолчанию'}</span></p>
-                    <div class="tags-container">${tagsHtml}</div>
+                <div class="poi-actions">
+                    ${actionButtonsFor(status, poi.id)}
+                    <button class="expand-btn" onclick="toggleDetails(this)" title="Подробности">▼</button>
                 </div>
-            `;
-            container.appendChild(item);
-        });
+            </div>
+            ${rejectionBlock}
+            <div class="poi-details">
+                <hr>
+                <p><strong>Описание:</strong> ${escapeHtml(poi.description) || '<span class="muted">отсутствует</span>'}</p>
+                <p>
+                    <strong>Координаты:</strong> ${lat}, ${lon}
+                    ${osmUrl ? `<a class="map-link" href="${osmUrl}" target="_blank" rel="noopener">смотреть на OSM ↗</a>` : ''}
+                </p>
+                <p><strong>Язык:</strong> <span class="lang-tag">${escapeHtml(poi.lang) || 'default'}</span></p>
+                <div class="tags-container">${tagsHtml}</div>
+            </div>
+        `;
+
+        return item;
+    }
+
+    function actionButtonsFor(status, id) {
+        const buttons = [];
+        if (status !== 'APPROVED') {
+            buttons.push(`<button class="btn btn-approve" onclick="quickAction(${id}, 'APPROVED')">✓ Одобрить</button>`);
+        }
+        if (status !== 'REJECTED') {
+            buttons.push(`<button class="btn btn-reject" onclick="openRejectModal(${id})">✗ Отклонить</button>`);
+        }
+        if (status !== 'PENDING') {
+            buttons.push(`<button class="btn btn-ghost" onclick="quickAction(${id}, 'PENDING')">↺ Вернуть в ожидание</button>`);
+        }
+        return buttons.join('');
     }
 
     window.toggleDetails = function(btn) {
         const item = btn.closest('.poi-item');
         const details = item.querySelector('.poi-details');
-        const isVisible = details.style.display === 'block';
-
-        details.style.display = isVisible ? 'none' : 'block';
-        btn.innerText = isVisible ? '▼' : '▲';
+        const isVisible = details.classList.toggle('open');
+        btn.innerText = isVisible ? '▲' : '▼';
     };
 
-    window.applyStatusChange = function(id) {
-        const selectElement = document.getElementById(`status-select-${id}`);
-        const newStatus = selectElement.value;
+    window.quickAction = async function(id, newStatus) {
+        const confirmMessage = `Изменить статус POI #${id} на «${STATUS_META[newStatus].label}»?`;
+        if (!confirm(confirmMessage)) return;
 
-        if (!newStatus) {
-            alert("Пожалуйста, выберите статус из списка.");
-            return;
-        }
+        await applyStatus(id, newStatus, null);
+    };
 
-        let confirmMessage = `Вы уверены, что хотите изменить статус на "${newStatus}"?`;
+    window.openRejectModal = function(id) {
+        pendingRejectId = id;
+        const modal = document.getElementById('reject-modal');
+        const input = document.getElementById('reject-reason-input');
+        input.value = '';
+        modal.classList.remove('hidden');
+        setTimeout(() => input.focus(), 50);
+    };
 
-        if (newStatus === 'REJECTED') {
-            confirmMessage = `ВНИМАНИЕ!\nВы уверены, что хотите ОТКЛОНИТЬ эту запись?`;
-        }
+    window.closeRejectModal = function() {
+        pendingRejectId = null;
+        document.getElementById('reject-modal').classList.add('hidden');
+    };
 
-        if (!confirm(confirmMessage)) {
-            selectElement.value = "";
-            return;
-        }
+    window.confirmReject = async function() {
+        if (pendingRejectId == null) return;
+        const reason = document.getElementById('reject-reason-input').value.trim();
+        const id = pendingRejectId;
+        closeRejectModal();
+        await applyStatus(id, 'REJECTED', reason || null);
+    };
 
-        adminFetch(`/api/admin/pois/${id}/status?request=${newStatus}`, {
+    async function applyStatus(id, newStatus, rejectionReason) {
+        const params = new URLSearchParams({ request: newStatus });
+        if (rejectionReason) params.set('rejectionReason', rejectionReason);
+
+        const res = await adminFetch(`/api/admin/pois/${id}/status?${params.toString()}`, {
             method: 'PATCH'
-        })
-        .then(res => {
-            if (res && res.ok) {
-                fetchPois(currentStatus, currentPage);
-            }
-        })
-        .catch(err => alert("Не удалось обновить статус: " + err.message));
-    };
+        });
+
+        if (res && res.ok) {
+            fetchPois(currentStatus, currentPage);
+        } else if (res) {
+            const text = await res.text().catch(() => '');
+            alert(`Не удалось обновить статус (HTTP ${res.status}). ${text}`);
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeRejectModal();
+    });
+    document.getElementById('reject-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'reject-modal') closeRejectModal();
+    });
 
     window.logout = function() {
         localStorage.removeItem('accessToken');
 
-        // TODO: logout! (this not work)
-
         const csrfToken = document.querySelector("meta[name='_csrf']").getAttribute("content");
-        const csrfHeader = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
 
         const form = document.createElement('form');
         form.method = 'POST';

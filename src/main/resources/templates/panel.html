@@ -2,7 +2,7 @@
 <html lang="ru" xmlns:th="http://www.thymeleaf.org">
     <head>
         <meta charset="UTF-8">
-        <title>Панель администратора - POI</title>
+        <title>Панель администратора — POI</title>
 
         <meta name="_csrf" th:content="${_csrf.token}"/>
         <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
@@ -20,24 +20,56 @@
                 </ul>
             </nav>
         </header>
+
         <main>
-            <h2>Управление POI</h2>
+            <div class="page-head">
+                <h2>Модерация POI</h2>
+                <p class="page-subtitle">
+                    PENDING — ожидают проверки. Любое создание/обновление/дополнение точки
+                    отправляет её обратно в PENDING.
+                </p>
+            </div>
 
             <div class="tabs">
-                <button class="tab-btn active" data-status="PENDING">В ожидании</button>
-                <button class="tab-btn" data-status="APPROVED">Одобрено</button>
-                <button class="tab-btn" data-status="REJECTED">Отклонено</button>
+                <button class="tab-btn active" data-status="PENDING">
+                    <span class="tab-label">В ожидании</span>
+                </button>
+                <button class="tab-btn" data-status="APPROVED">
+                    <span class="tab-label">Одобрено</span>
+                </button>
+                <button class="tab-btn" data-status="REJECTED">
+                    <span class="tab-label">Отклонено</span>
+                </button>
             </div>
 
-            <div id="poi-container" class="poi-list">
-            </div>
+            <div id="poi-container" class="poi-list"></div>
 
             <div class="pagination-controls">
                 <button id="prev-btn" onclick="changePage(-1)">← Назад</button>
                 <span id="page-info">Страница: <b id="current-page-num">1</b></span>
-                <button id="next-btn" onclick="changePage(1)">Вперед →</button>
+                <button id="next-btn" onclick="changePage(1)">Вперёд →</button>
             </div>
         </main>
+
+        <div id="reject-modal" class="modal-backdrop hidden">
+            <div class="modal">
+                <h3>Отклонить POI</h3>
+                <p class="modal-hint">
+                    Опишите, что не так — пользователь увидит этот текст в разделе
+                    «Мои POI». Если оставить пустым, на клиенте отобразится
+                    «Причина не указана».
+                </p>
+                <textarea
+                    id="reject-reason-input"
+                    rows="4"
+                    placeholder="Например: Название неинформативное, добавьте конкретику"
+                    maxlength="500"></textarea>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost" onclick="closeRejectModal()">Отмена</button>
+                    <button class="btn btn-danger" onclick="confirmReject()">Отклонить</button>
+                </div>
+            </div>
+        </div>
 
         <script th:inline="javascript">
             const token = /*[[${jwtToken}]]*/ 'default_token';
