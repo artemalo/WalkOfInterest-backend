@@ -26,7 +26,7 @@ public interface FlatPoiProjection {
     Double getRate();
     Integer getCount();
     PoiStatus getStatus();
-    Boolean getUserId();
+    Long getUserId();
 
     // Coordinate
     Double getLat();
