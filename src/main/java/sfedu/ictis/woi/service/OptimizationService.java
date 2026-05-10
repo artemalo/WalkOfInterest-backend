@@ -9,7 +9,9 @@ import sfedu.ictis.woi.infrastructure.client.GraphHopperClient;
 import sfedu.ictis.woi.model.SearchResponse;
 import sfedu.ictis.woi.model.dto.CategoryDTO;
 import sfedu.ictis.woi.model.dto.PoiDTO;
+import sfedu.ictis.woi.model.dto.PoiOrderDTO;
 import sfedu.ictis.woi.model.dto.PointDTO;
+import sfedu.ictis.woi.model.dto.ReorderRequest;
 import sfedu.ictis.woi.model.dto.SearchRequestDTO;
 import sfedu.ictis.woi.model.dto.SubCategoryDTO;
 import sfedu.ictis.woi.service.selection.Candidate;
@@ -36,6 +38,31 @@ public class OptimizationService {
     private final OptimizerConfig config;
     private final ScoreCalculatorService scoreCalculator;
     private final GraphHopperClient ghClient;
+
+    public List<PoiOrderDTO> reorder(ReorderRequest request) {
+        PointDTO p1 = request.getP1();
+        PointDTO p2 = request.getP2();
+
+        List<Candidate> candidates = request.getPois().stream()
+                .map(item -> {
+                    PoiDTO poi = new PoiDTO();
+                    poi.setId(item.getId());
+                    poi.setLat(item.getLat());
+                    poi.setLon(item.getLon());
+                    poi.setScore(0.0);
+                    return new Candidate(poi, new SubCategoryDTO(), new CategoryDTO(), 0.0);
+                })
+                .collect(Collectors.toList());
+
+        RouteAssembler assembler = new RouteAssembler(p1, p2, Double.MAX_VALUE, candidates.size());
+        List<Candidate> ordered = assembler.assemble(candidates);
+
+        List<PoiOrderDTO> result = new ArrayList<>();
+        for (int i = 0; i < ordered.size(); i++) {
+            result.add(new PoiOrderDTO(ordered.get(i).id(), i));
+        }
+        return result;
+    }
 
     public void optimize(SearchResponse response, SearchRequestDTO request) {
         if (response == null || response.getCategories() == null || response.getCategories().isEmpty()) {

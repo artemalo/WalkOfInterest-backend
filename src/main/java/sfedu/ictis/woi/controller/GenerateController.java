@@ -9,7 +9,9 @@ import sfedu.ictis.woi.model.RouteFromToRequest;
 import sfedu.ictis.woi.model.RouteResponse;
 import sfedu.ictis.woi.model.SearchRequest;
 import sfedu.ictis.woi.model.SearchResponse;
+import sfedu.ictis.woi.model.dto.PoiOrderDTO;
 import sfedu.ictis.woi.model.dto.PointDTO;
+import sfedu.ictis.woi.model.dto.ReorderRequest;
 import sfedu.ictis.woi.service.OptimizationService;
 import sfedu.ictis.woi.service.GenerateService;
 
@@ -43,5 +45,10 @@ public class GenerateController implements GenerateControllerApi {
     @PostMapping("/time")
     public ResponseEntity<Long> getTime(@RequestBody List<PointDTO> request) {
         return ResponseEntity.ok(generateService.getTime(request));
+    }
+
+    @PostMapping("/reorder")
+    public ResponseEntity<List<PoiOrderDTO>> reorder(@RequestBody ReorderRequest request) {
+        return ResponseEntity.ok(optimizationService.reorder(request));
     }
 }

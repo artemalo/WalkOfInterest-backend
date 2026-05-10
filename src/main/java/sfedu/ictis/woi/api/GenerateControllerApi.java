@@ -13,7 +13,9 @@ import sfedu.ictis.woi.model.RouteFromToRequest;
 import sfedu.ictis.woi.model.RouteResponse;
 import sfedu.ictis.woi.model.SearchRequest;
 import sfedu.ictis.woi.model.SearchResponse;
+import sfedu.ictis.woi.model.dto.PoiOrderDTO;
 import sfedu.ictis.woi.model.dto.PointDTO;
+import sfedu.ictis.woi.model.dto.ReorderRequest;
 
 import java.util.List;
 
@@ -52,4 +54,15 @@ public interface GenerateControllerApi {
     })
     @PostMapping("/time")
     ResponseEntity<Long> getTime(@RequestBody List<PointDTO> request);
+
+    @Operation(
+            summary = "Пересчитать порядок выбранных POI",
+            description = "Запускает алгоритм оптимизации маршрута для уже выбранных точек и возвращает их новый порядок"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Порядок пересчитан"),
+            @ApiResponse(responseCode = "400", description = "Некорректные входные данные")
+    })
+    @PostMapping("/reorder")
+    ResponseEntity<List<PoiOrderDTO>> reorder(@RequestBody ReorderRequest request);
 }
