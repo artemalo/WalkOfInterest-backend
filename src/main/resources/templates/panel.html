@@ -30,6 +30,33 @@
                 </p>
             </div>
 
+            <!-- ===== Фильтры и поиск ===== -->
+            <div class="filters-bar">
+                <div class="search-group">
+                    <input
+                        id="search-input"
+                        type="text"
+                        class="search-input"
+                        placeholder="Поиск по названию или ID…"
+                        maxlength="200"
+                        autocomplete="off"
+                    />
+                </div>
+
+                <div class="coord-group">
+                    <input id="coord-lat" type="number" step="any" class="coord-input" placeholder="Широта" />
+                    <input id="coord-lon" type="number" step="any" class="coord-input" placeholder="Долгота" />
+                    <button class="btn btn-ghost coord-clear-btn" onclick="clearCoords()" title="Сбросить координаты">✕</button>
+                </div>
+
+                <select id="owner-filter" class="owner-select">
+                    <option value="">Все владельцы</option>
+                    <option value="USER">Только пользовательские</option>
+                    <option value="OSM">Только OSM</option>
+                </select>
+            </div>
+
+            <!-- ===== Вкладки ===== -->
             <div class="tabs">
                 <button class="tab-btn active" data-status="PENDING">
                     <span class="tab-label">В ожидании</span>
@@ -51,6 +78,7 @@
             </div>
         </main>
 
+        <!-- ===== Модалка отклонения ===== -->
         <div id="reject-modal" class="modal-backdrop hidden">
             <div class="modal">
                 <h3>Отклонить POI</h3>
@@ -67,6 +95,21 @@
                 <div class="modal-actions">
                     <button class="btn btn-ghost" onclick="closeRejectModal()">Отмена</button>
                     <button class="btn btn-danger" onclick="confirmReject()">Отклонить</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Модалка удаления ===== -->
+        <div id="delete-modal" class="modal-backdrop hidden">
+            <div class="modal">
+                <h3>Удалить POI</h3>
+                <p class="modal-hint">
+                    Точка будет удалена безвозвратно. Это действие нельзя отменить.
+                    Удаление доступно только для отклонённых POI.
+                </p>
+                <div class="modal-actions">
+                    <button class="btn btn-ghost" onclick="closeDeleteModal()">Отмена</button>
+                    <button class="btn btn-danger" onclick="confirmDelete()">Удалить</button>
                 </div>
             </div>
         </div>

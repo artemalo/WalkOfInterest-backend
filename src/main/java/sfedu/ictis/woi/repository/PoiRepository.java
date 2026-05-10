@@ -152,4 +152,81 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
             nativeQuery = true
     )
     Page<PoiEntity> findAllByStatusIncludingDeleted(@Param("status") PoiStatus status, Pageable pageable);
+
+    /**
+     * Фильтрация по статусу + поиск по имени/ID + тип владельца + радиус координат.
+     * Используется только в админ-панели. Удаленные POI исключены.
+     *
+     * @param status    статус
+     * @param search    подстрока для поиска в pois_langues.poi_name; null - без фильтра по имени
+     * @param searchId  ID точки для прямого совпадения; null - не применяется
+     * @param ownerType "OSM" | "USER" | null (без фильтра)
+     * @param lat       широта центра поиска по координатам; null - без фильтра
+     * @param lon       долгота центра поиска по координатам; null - без фильтра
+     */
+    @Query(value = """
+            SELECT p.* FROM pois p
+            WHERE p.deleted_at IS NULL
+              AND p.status = :status
+              AND (
+                  :search IS NULL
+                  OR (:searchId IS NOT NULL AND p.id = :searchId)
+                  OR EXISTS (
+                      SELECT 1 FROM pois_langues pl
+                      WHERE pl.poi_id = p.id
+                        AND LOWER(pl.poi_name) LIKE LOWER(CONCAT('%', :search, '%'))
+                  )
+              )
+              AND (
+                  :ownerType IS NULL
+                  OR (:ownerType = 'OSM'  AND p.user_id IS NULL)
+                  OR (:ownerType = 'USER' AND p.user_id IS NOT NULL)
+              )
+              AND (
+                  :lat IS NULL OR :lon IS NULL
+                  OR ST_DWithin(
+                      p.geom::geography,
+                      ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography,
+                      150
+                  )
+              )
+            ORDER BY p.last_update DESC
+            """,
+            countQuery = """
+            SELECT COUNT(*) FROM pois p
+            WHERE p.deleted_at IS NULL
+              AND p.status = :status
+              AND (
+                  :search IS NULL
+                  OR (:searchId IS NOT NULL AND p.id = :searchId)
+                  OR EXISTS (
+                      SELECT 1 FROM pois_langues pl
+                      WHERE pl.poi_id = p.id
+                        AND LOWER(pl.poi_name) LIKE LOWER(CONCAT('%', :search, '%'))
+                  )
+              )
+              AND (
+                  :ownerType IS NULL
+                  OR (:ownerType = 'OSM'  AND p.user_id IS NULL)
+                  OR (:ownerType = 'USER' AND p.user_id IS NOT NULL)
+              )
+              AND (
+                  :lat IS NULL OR :lon IS NULL
+                  OR ST_DWithin(
+                      p.geom::geography,
+                      ST_SetSRID(ST_MakePoint(:lon, :lat), 4326)::geography,
+                      150
+                  )
+              )
+            """,
+            nativeQuery = true)
+    Page<PoiEntity> findAllByStatusWithFilters(
+            @Param("status")    String status,
+            @Param("search")    String search,
+            @Param("searchId")  Long searchId,
+            @Param("ownerType") String ownerType,
+            @Param("lat")       Double lat,
+            @Param("lon")       Double lon,
+            Pageable pageable
+    );
 }

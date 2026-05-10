@@ -8,8 +8,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import sfedu.ictis.woi.exception.AccessDeniedException;
+import sfedu.ictis.woi.exception.BusinessException;
 import sfedu.ictis.woi.exception.InvalidCredentialsException;
 import sfedu.ictis.woi.exception.PoiAlreadyExistsException;
 import sfedu.ictis.woi.exception.RateLimitExceededException;
@@ -36,6 +38,7 @@ public class PoiService {
     private final PoiRepository poiRepository;
     private final UserRepository userRepository;
     private final SubcategoryRepository subcategoryRepository;
+    private final PoiHistoryRepository poiHistoryRepository;
 
     private final ReviewRepository reviewRepository;
     private final ReviewLikeRepository reviewLikeRepository;
@@ -120,6 +123,11 @@ public class PoiService {
         addOrUpdateLocale(entity, dto.getLang(), dto.getName(), dto.getDescription());
 
         PoiEntity savedEntity = poiRepository.save(entity);
+
+        recordHistory(savedEntity.getId(), PoiHistoryAction.CREATED,
+                null, PoiStatus.PENDING,
+                user.getEmail(), null);
+
         return PoiMapper.mapToInfoDTO(savedEntity, dto.getLang());
     }
 
@@ -128,6 +136,8 @@ public class PoiService {
         UserEntity user = getAuthenticatedUser(authentication);
         PoiEntity entity = poiRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
+
+        PoiStatus oldStatus = entity.getStatus();
 
         if (user.getRole() != UserRole.ADMIN) {
             UserEntity owner = entity.getUser();
@@ -148,6 +158,11 @@ public class PoiService {
         entity.setRejectionReason(null);
 
         PoiEntity savedEntity = poiRepository.save(entity);
+
+        recordHistory(savedEntity.getId(), PoiHistoryAction.UPDATED,
+                oldStatus, PoiStatus.PENDING,
+                user.getEmail(), null);
+
         return PoiMapper.mapToInfoDTO(savedEntity, dto.getLang());
     }
 
@@ -156,6 +171,8 @@ public class PoiService {
         UserEntity user = getAuthenticatedUser(authentication);
         PoiEntity entity = poiRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
+
+        PoiStatus oldStatus = entity.getStatus();
 
         if (user.getRole() != UserRole.ADMIN) {
             UserEntity owner = entity.getUser();
@@ -171,11 +188,34 @@ public class PoiService {
         entity.setRejectionReason(null);
 
         PoiEntity savedEntity = poiRepository.save(entity);
+
+        recordHistory(savedEntity.getId(), PoiHistoryAction.SUPPLEMENTED,
+                oldStatus, PoiStatus.PENDING,
+                user.getEmail(), null);
+
         return PoiMapper.mapToInfoDTO(savedEntity, dto.getLang());
     }
 
-    public List<PoiAdminDTO> getPoisByStatus(PoiStatus status, Pageable pageable, String targetLang) {
-        Page<PoiEntity> poiPage = poiRepository.findAllByStatusIncludingDeleted(status, pageable);
+    public List<PoiAdminDTO> getPoisByStatus(
+            PoiStatus status, Pageable pageable, String targetLang,
+            String search, String ownerType,
+            Double lat, Double lon
+    ) {
+        // Разбираем строку поиска: если число — используем как searchId тоже
+        String normalizedSearch = (search != null && !search.isBlank()) ? search.trim() : null;
+        Long searchId = null;
+        if (normalizedSearch != null) {
+            try {
+                searchId = Long.parseLong(normalizedSearch);
+            } catch (NumberFormatException ignored) { }
+        }
+
+        String normalizedOwner = (ownerType != null && !ownerType.isBlank()) ? ownerType.trim() : null;
+
+        Page<PoiEntity> poiPage = poiRepository.findAllByStatusWithFilters(
+                status.name(), normalizedSearch, searchId, normalizedOwner, lat, lon, pageable
+        );
+
         return poiPage.getContent().stream()
                 .map(entity -> PoiMapper.mapToAdminDTO(entity, targetLang))
                 .collect(Collectors.toList());
@@ -185,6 +225,8 @@ public class PoiService {
     public void updatePoiStatus(Long id, PoiStatus status, String rejectionReason) {
         PoiEntity entity = poiRepository.findByIdIncludingDeleted(id)
                 .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
+
+        PoiStatus oldStatus = entity.getStatus();
 
         entity.setStatus(status);
         if (status == PoiStatus.REJECTED) {
@@ -198,8 +240,41 @@ public class PoiService {
         }
         poiRepository.save(entity);
 
-        log.warn("[{}] poi_id: {}", status, entity.getId());
+        String actor = currentActorName();
+        String note = (status == PoiStatus.REJECTED && entity.getRejectionReason() != null)
+                ? entity.getRejectionReason()
+                : null;
+
+        recordHistory(entity.getId(), PoiHistoryAction.STATUS_CHANGED,
+                oldStatus, status, actor, note);
+
+        log.warn("[{}] poi_id: {}, actor: {}", status, entity.getId(), actor);
     }
+
+    @Transactional
+    public void deletePoi(Long id) {
+        PoiEntity entity = poiRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
+
+        if (entity.getStatus() != PoiStatus.REJECTED) {
+            throw new BusinessException("Удалить можно только отклонённую точку (статус REJECTED)");
+        }
+
+        String actor = currentActorName();
+        recordHistory(entity.getId(), PoiHistoryAction.DELETED,
+                entity.getStatus(), null, actor, null);
+
+        poiRepository.delete(entity); // @SQLDelete → UPDATE pois SET deleted_at = ...
+        log.warn("[DELETED] poi_id: {}, actor: {}", id, actor);
+    }
+
+    public List<PoiHistoryDTO> getPoiHistory(Long id) {
+        return poiHistoryRepository.findAllByPoiIdOrderByChangedAtDesc(id)
+                .stream()
+                .map(this::mapHistory)
+                .collect(Collectors.toList());
+    }
+
 
     @Transactional
     public ReviewDTO upsertMyReview(Long poiId, ReviewRequestDTO dto, Authentication authentication, String lang) {
@@ -258,6 +333,7 @@ public class PoiService {
                 })
                 .toList();
     }
+
 
 
     private Map<Long, int[]> collectLikesMap(List<ReviewEntity> reviews) {
@@ -364,5 +440,39 @@ public class PoiService {
         if (hasDescription && (locale.getPoiDescription() == null || locale.getPoiDescription().isBlank())) {
             locale.setPoiDescription(description);
         }
+    }
+
+    private void recordHistory(Long poiId, PoiHistoryAction action,
+                               PoiStatus oldStatus, PoiStatus newStatus,
+                               String actorUsername, String note) {
+        PoiHistoryEntity h = new PoiHistoryEntity();
+        h.setPoiId(poiId);
+        h.setActionType(action);
+        h.setOldStatus(oldStatus);
+        h.setNewStatus(newStatus != null ? newStatus : oldStatus); // DELETED — нет нового статуса
+        h.setActorUsername(actorUsername);
+        h.setNote(note);
+        poiHistoryRepository.save(h);
+    }
+
+    private String currentActorName() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && auth.getName() != null) {
+            return auth.getName();
+        }
+        return "system";
+    }
+
+    private PoiHistoryDTO mapHistory(PoiHistoryEntity entity) {
+        return new PoiHistoryDTO(
+                entity.getId(),
+                entity.getPoiId(),
+                entity.getActorUsername(),
+                entity.getActionType(),
+                entity.getOldStatus(),
+                entity.getNewStatus(),
+                entity.getChangedAt(),
+                entity.getNote()
+        );
     }
 }

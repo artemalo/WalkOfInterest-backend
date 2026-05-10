@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.model.dto.PoiAdminDTO;
+import sfedu.ictis.woi.model.dto.PoiHistoryDTO;
 import sfedu.ictis.woi.model.entity.PoiStatus;
 
 import java.util.List;
@@ -18,7 +19,8 @@ import java.util.List;
 })
 @RequestMapping("/api/admin/pois")
 public interface AdminControllerApi {
-    @Operation(summary = "Список POI с фильтрацией по статусу и пагинацией")
+
+    @Operation(summary = "Список POI с фильтрацией по статусу, поиском и пагинацией")
     @GetMapping
     List<PoiAdminDTO> getPoisByStatus(
             @Parameter(description = "Статус точек", example = "PENDING")
@@ -31,7 +33,19 @@ public interface AdminControllerApi {
             @RequestParam(defaultValue = "20") int size,
 
             @Parameter(description = "Язык")
-            @RequestParam(defaultValue = "default") String lang
+            @RequestParam(defaultValue = "default") String lang,
+
+            @Parameter(description = "Строка поиска: имя (подстрока) или числовой ID")
+            @RequestParam(required = false) String search,
+
+            @Parameter(description = "Тип владельца: OSM (без пользователя) | USER (создан пользователем)")
+            @RequestParam(required = false) String ownerType,
+
+            @Parameter(description = "Широта для поиска в радиусе 150м")
+            @RequestParam(required = false) Double lat,
+
+            @Parameter(description = "Долгота для поиска в радиусе 150м")
+            @RequestParam(required = false) Double lon
     );
 
     @Operation(
@@ -50,4 +64,12 @@ public interface AdminControllerApi {
             @Parameter(description = "Причина отказа (только при REJECTED)")
             @RequestParam(required = false) String rejectionReason
     );
+
+    @Operation(summary = "Удалить POI (только со статусом REJECTED)")
+    @DeleteMapping("/{id}")
+    void deletePoi(@PathVariable Long id);
+
+    @Operation(summary = "История изменений POI")
+    @GetMapping("/{id}/history")
+    List<PoiHistoryDTO> getPoiHistory(@PathVariable Long id);
 }

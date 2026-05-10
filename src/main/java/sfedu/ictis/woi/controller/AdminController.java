@@ -2,10 +2,12 @@ package sfedu.ictis.woi.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.api.AdminControllerApi;
 import sfedu.ictis.woi.model.dto.PoiAdminDTO;
+import sfedu.ictis.woi.model.dto.PoiHistoryDTO;
 import sfedu.ictis.woi.model.entity.PoiStatus;
 import sfedu.ictis.woi.service.PoiService;
 
@@ -23,9 +25,16 @@ public class AdminController implements AdminControllerApi {
             @RequestParam PoiStatus request,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "default") String lang
+            @RequestParam(defaultValue = "default") String lang,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String ownerType,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lon
     ) {
-        return poiService.getPoisByStatus(request, PageRequest.of(page, size), lang);
+        return poiService.getPoisByStatus(
+                request, PageRequest.of(page, size), lang,
+                search, ownerType, lat, lon
+        );
     }
 
     @PatchMapping("/{id}/status")
@@ -35,5 +44,16 @@ public class AdminController implements AdminControllerApi {
             @RequestParam(required = false) String rejectionReason
     ) {
         poiService.updatePoiStatus(id, request, rejectionReason);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletePoi(@PathVariable Long id) {
+        poiService.deletePoi(id);
+    }
+
+    @GetMapping("/{id}/history")
+    public List<PoiHistoryDTO> getPoiHistory(@PathVariable Long id) {
+        return poiService.getPoiHistory(id);
     }
 }

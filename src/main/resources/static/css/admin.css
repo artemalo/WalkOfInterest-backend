@@ -417,6 +417,254 @@
     margin-top: 1em;
 }
 
+/* ===== Кнопка удаления ===== */
+.btn-delete {
+    background-color: rgba(120, 20, 15, 0.35);
+    border-color: rgba(207, 45, 36, 0.6);
+    color: #f06a64;
+}
+
+.btn-delete:hover {
+    background-color: rgba(180, 30, 20, 0.55);
+}
+
+/* ===== Панель фильтров ===== */
+.filters-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75em;
+    margin-bottom: 1.5em;
+    align-items: center;
+}
+
+.search-group {
+    flex: 1 1 220px;
+    min-width: 180px;
+}
+
+.search-input {
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.5em;
+    color: #e0e0e0;
+    font-size: 0.92em;
+    padding: 0.5em 0.85em;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+}
+
+.search-input::placeholder {
+    color: #666;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #4B8F8C;
+}
+
+.coord-group {
+    display: flex;
+    gap: 0.4em;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.coord-input {
+    width: 110px;
+    background-color: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.5em;
+    color: #e0e0e0;
+    font-size: 0.88em;
+    padding: 0.5em 0.7em;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+    /* Скрыть стрелочки у number-input */
+    -moz-appearance: textfield;
+}
+
+.coord-input::-webkit-outer-spin-button,
+.coord-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.coord-input::placeholder {
+    color: #666;
+}
+
+.coord-input:focus {
+    outline: none;
+    border-color: #4B8F8C;
+}
+
+.coord-clear-btn {
+    padding: 0.4em 0.6em;
+    font-size: 0.8em;
+    color: #999;
+    border-color: rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.coord-clear-btn:hover {
+    color: #f06a64;
+    border-color: rgba(207, 45, 36, 0.4);
+}
+
+.owner-select {
+    background-color: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.5em;
+    color: #e0e0e0;
+    font-size: 0.92em;
+    padding: 0.5em 0.85em;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    flex-shrink: 0;
+}
+
+.owner-select:focus {
+    outline: none;
+    border-color: #4B8F8C;
+}
+
+.owner-select option {
+    background-color: #2b2e38;
+    color: #e0e0e0;
+}
+
+/* ===== История изменений ===== */
+.history-section {
+    margin-top: 1.2em;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding-top: 0.9em;
+}
+
+.history-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8em;
+    margin-bottom: 0.6em;
+}
+
+.history-title {
+    font-size: 0.82em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #9b9b9b;
+}
+
+.history-load-btn {
+    font-size: 0.78em;
+    padding: 0.25em 0.6em;
+    color: #9b9b9b;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.history-load-btn:hover {
+    color: #cfcfcf;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.history-empty {
+    font-size: 0.88em;
+    padding: 0.3em 0;
+}
+
+/* Одна запись истории */
+.hist-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7em;
+    position: relative;
+    padding: 0.55em 0;
+}
+
+/* Вертикальная линия таймлайна */
+.hist-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 0.75em;
+    top: 2.1em;
+    bottom: -0.55em;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.hist-icon {
+    width: 1.5em;
+    height: 1.5em;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72em;
+    flex-shrink: 0;
+    color: #cfcfcf;
+    margin-top: 0.1em;
+}
+
+.hist-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.hist-action {
+    font-size: 0.88em;
+    color: #cfcfcf;
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    flex-wrap: wrap;
+}
+
+.hist-status {
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 0.4em;
+    padding: 0.05em 0.4em;
+    font-size: 0.82em;
+    color: #aaa;
+    white-space: nowrap;
+}
+
+.hist-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.35em;
+    margin-top: 0.2em;
+    font-size: 0.78em;
+    color: #777;
+    flex-wrap: wrap;
+}
+
+.hist-actor {
+    color: #9b9b9b;
+}
+
+.hist-date {
+    white-space: nowrap;
+}
+
+.hist-note {
+    margin-top: 0.3em;
+    font-size: 0.82em;
+    color: #b0b0b0;
+    background: rgba(255, 255, 255, 0.04);
+    border-left: 2px solid rgba(255, 255, 255, 0.12);
+    padding: 0.3em 0.6em;
+    border-radius: 0 0.3em 0.3em 0;
+    word-break: break-word;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(-5px); }
     to   { opacity: 1; transform: translateY(0); }
