@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import sfedu.ictis.woi.model.UpdateProfileRequest;
 import sfedu.ictis.woi.model.UpdateUsernameRequest;
 import sfedu.ictis.woi.model.dto.ReviewDTO;
 import sfedu.ictis.woi.model.dto.UserProfileDTO;
@@ -24,7 +25,9 @@ public interface UserControllerApi {
             @ApiResponse(responseCode = "401", description = "Не авторизован")
     })
     @GetMapping("/me")
-    ResponseEntity<UserProfileDTO> getMyProfile(Authentication authentication);
+    ResponseEntity<UserProfileDTO> getMyProfile(
+            @Parameter(hidden = true) Authentication authentication
+    );
 
     @Operation(summary = "Получить профиль пользователя по никнейму")
     @ApiResponses({
@@ -44,7 +47,7 @@ public interface UserControllerApi {
     @GetMapping("/{username}/reviews")
     ResponseEntity<List<ReviewDTO>> getReviewsByUsername(
             @Parameter(description = "Никнейм пользователя") @PathVariable String username,
-            Authentication authentication,
+            @Parameter(hidden = true) Authentication authentication,
             @Parameter(description = "Язык POI", example = "ru")
             @RequestParam(defaultValue = "default") String lang
     );
@@ -58,7 +61,22 @@ public interface UserControllerApi {
     })
     @PatchMapping("/me")
     ResponseEntity<UserProfileDTO> updateUsername(
-            Authentication authentication,
+            @Parameter(hidden = true) Authentication authentication,
             @Valid @RequestBody UpdateUsernameRequest request
+    );
+
+    @Operation(
+            summary = "Обновить информацию профиля",
+            description = "Позволяет изменить имя, фамилию и био (о себе) текущего пользователя"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Данные профиля успешно обновлены"),
+            @ApiResponse(responseCode = "400", description = "Ошибка валидации входных данных"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован")
+    })
+    @PatchMapping("/me/info")
+    ResponseEntity<UserProfileDTO> updateProfileInfo(
+            @Parameter(hidden = true) Authentication authentication,
+            @Valid @RequestBody UpdateProfileRequest request
     );
 }

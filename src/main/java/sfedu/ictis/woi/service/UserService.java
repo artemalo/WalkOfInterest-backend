@@ -8,6 +8,7 @@ import sfedu.ictis.woi.exception.InvalidCredentialsException;
 import sfedu.ictis.woi.exception.ResourceNotFoundException;
 import sfedu.ictis.woi.exception.UserAlreadyExistsException;
 import sfedu.ictis.woi.mapper.UserMapper;
+import sfedu.ictis.woi.model.UpdateProfileRequest;
 import sfedu.ictis.woi.model.dto.ReactionType;
 import sfedu.ictis.woi.model.dto.ReviewDTO;
 import sfedu.ictis.woi.model.dto.UserProfileDTO;
@@ -77,6 +78,20 @@ public class UserService {
         }
 
         user.setUsername(newUsername);
+        userRepository.save(user);
+
+        long count = reviewRepository.countByUser(user);
+        return UserMapper.mapToProfileDTO(user, count);
+    }
+
+    @Transactional
+    public UserProfileDTO updateProfileInfo(Authentication authentication, UpdateProfileRequest request) {
+        UserEntity user = getAuthenticatedUser(authentication);
+
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
+        user.setBio(request.bio());
+
         userRepository.save(user);
 
         long count = reviewRepository.countByUser(user);

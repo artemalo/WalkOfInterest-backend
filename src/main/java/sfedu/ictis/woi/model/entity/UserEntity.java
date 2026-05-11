@@ -30,6 +30,9 @@ public class UserEntity {
     @Column(name = "user_name_last")
     private String lastName;
 
+    @Column(name = "user_bio", length = 255)
+    private String bio;
+
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
