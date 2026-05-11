@@ -20,7 +20,7 @@ public class UserMapper {
                 .username(user.getUsername())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
-                .bio(null)        // TODO: UserEntity
+                .bio(user.getBio())
                 .photoUrl(null)   // TODO: UserEntity
                 .countTrips(null)    // TODO: new table trips
                 .countSpots(null)    // TODO: new table spots

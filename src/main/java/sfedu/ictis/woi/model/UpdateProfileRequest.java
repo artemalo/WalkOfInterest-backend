@@ -15,4 +15,9 @@ public record UpdateProfileRequest(
         @Size(max = 255, message = "Описание 'О себе' не должно превышать 255 символов")
         String bio
 ) {
+        public UpdateProfileRequest {
+                if (firstName != null) firstName = firstName.trim();
+                if (lastName != null) lastName = lastName.trim();
+                if (bio != null) bio = bio.trim();
+        }
 }
