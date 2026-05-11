@@ -24,11 +24,10 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final SubcategoryRepository subcategoryRepository;
 
-    public List<CategoryWithSubcategoriesDTO> getAllCategoriesWithSubcategories(String lang) {
-        List<CategoryEntity> categories = categoryRepository.findAllWithSubcategories();
+    public List<CategoryWithSubcategoriesDTO> getAllCategories(String lang) {
+        List<CategoryEntity> categories = categoryRepository.findAllCategories();
 
         return categories.stream()
-                .sorted(Comparator.comparing(CategoryEntity::getId))
                 .map(cat -> new CategoryWithSubcategoriesDTO(
                         cat.getId(),
                         cat.getName(),

@@ -9,10 +9,6 @@ import java.util.List;
 
 @Repository
 public interface CategoryRepository extends JpaRepository<CategoryEntity, Integer> {
-    @Query("""
-        SELECT DISTINCT c FROM CategoryEntity c
-        LEFT JOIN FETCH c.subcategories s
-        ORDER BY c.id
-    """)
-    List<CategoryEntity> findAllWithSubcategories();
+    @Query("SELECT c FROM CategoryEntity c ORDER BY c.id")
+    List<CategoryEntity> findAllCategories();
 }

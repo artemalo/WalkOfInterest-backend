@@ -21,7 +21,7 @@ public class CategoryController implements CategoryControllerApi {
     public List<CategoryWithSubcategoriesDTO> getAllCategories(
             @RequestParam(defaultValue = "ru") String lang
     ) {
-        return categoryService.getAllCategoriesWithSubcategories(lang);
+        return categoryService.getAllCategories(lang);
     }
 
     @GetMapping("/{id}/subcategories")
