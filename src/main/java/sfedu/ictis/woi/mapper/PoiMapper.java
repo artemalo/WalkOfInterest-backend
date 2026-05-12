@@ -96,6 +96,7 @@ public class PoiMapper {
         PoiNearbyDTO dto = new PoiNearbyDTO();
         dto.setId(p.getId());
         dto.setName(p.getName());
+        dto.setCategoryId(p.getCategoryId());
         dto.setCategoryName(p.getCategoryName());
         dto.setSubcategoryName(p.getSubcategoryName());
         if (p.getLat() != null && p.getLon() != null) {

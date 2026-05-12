@@ -88,6 +88,7 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
         SELECT
             p.id AS id,
             pl.poi_name AS name,
+            s.category_id AS categoryId,
             c.category_name AS categoryName,
             s.subcategory_name AS subcategoryName,
             ST_Y(ST_Centroid(p.geom)) AS lat,

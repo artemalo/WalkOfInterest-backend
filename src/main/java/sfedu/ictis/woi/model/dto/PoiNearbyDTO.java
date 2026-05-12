@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class PoiNearbyDTO {
     private Long id;
     private String name;
+    private Integer categoryId;
     private String categoryName;
     private String subcategoryName;
     private PointDTO point;
