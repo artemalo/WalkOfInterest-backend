@@ -14,50 +14,83 @@ import java.util.concurrent.ConcurrentMap;
 public class RateLimiterService {
     private final long poiCreateCapacity;
     private final long poiCreatePeriodHours;
-
     private final ConcurrentMap<Long, Bucket> poiCreateBuckets = new ConcurrentHashMap<>();
 
+    private final long registerCapacity;
+    private final long registerPeriodHours;
+    private final ConcurrentMap<String, Bucket> registerBuckets = new ConcurrentHashMap<>();
+
+    private final long loginCapacity;
+    private final long loginPeriodMinutes;
+    private final ConcurrentMap<String, Bucket> loginBuckets = new ConcurrentHashMap<>();
+
     public RateLimiterService(
-            @Value("${app.rate-limit.poi-create.capacity:5}") long poiCreateCapacity,
-            @Value("${app.rate-limit.poi-create.period-hours:24}") long poiCreatePeriodHours
+            @Value("${app.rate-limit.poi-create.capacity}") long poiCreateCapacity,
+            @Value("${app.rate-limit.poi-create.period-hours}") long poiCreatePeriodHours,
+            @Value("${app.rate-limit.register.capacity}") long registerCapacity,
+            @Value("${app.rate-limit.register.period-hours}") long registerPeriodHours,
+            @Value("${app.rate-limit.login.capacity}") long loginCapacity,
+            @Value("${app.rate-limit.login.period-minutes}") long loginPeriodMinutes
     ) {
         this.poiCreateCapacity = poiCreateCapacity;
         this.poiCreatePeriodHours = poiCreatePeriodHours;
+        this.registerCapacity = registerCapacity;
+        this.registerPeriodHours = registerPeriodHours;
+        this.loginCapacity = loginCapacity;
+        this.loginPeriodMinutes = loginPeriodMinutes;
     }
 
-    /**
-     * @return true создание разрешено,
-     *         false лимит исчерпан.
-     */
-    public boolean tryConsumePoiCreate(Long userId) {
-        Bucket bucket = poiCreateBuckets.computeIfAbsent(userId, _ -> newPoiCreateBucket());
+    public boolean tryConsumeRegister(String ip) {
+        Bucket bucket = registerBuckets.computeIfAbsent(ip, _ ->
+                newBucket(registerCapacity, Duration.ofHours(registerPeriodHours)));
         return bucket.tryConsume(1);
     }
 
-    /**
-     * Сколько токенов осталось у пользователя
-     */
-    public long getPoiCreateRemaining(Long userId) {
-        Bucket bucket = poiCreateBuckets.computeIfAbsent(userId, _ -> newPoiCreateBucket());
-        return bucket.getAvailableTokens();
+    public boolean tryConsumeLogin(String ip) {
+        Bucket bucket = loginBuckets.computeIfAbsent(ip, _ ->
+                newBucket(loginCapacity, Duration.ofMinutes(loginPeriodMinutes)));
+        return bucket.tryConsume(1);
     }
 
-    /**
-     * Через сколько секунд освободится хотя бы один токен
-     */
+    public boolean tryConsumePoiCreate(Long userId) {
+        Bucket bucket = poiCreateBuckets.computeIfAbsent(userId, _ ->
+                newBucket(poiCreateCapacity, Duration.ofHours(poiCreatePeriodHours)));
+        return bucket.tryConsume(1);
+    }
+
     public long getPoiCreateRetryAfterSeconds(Long userId) {
-        Bucket bucket = poiCreateBuckets.computeIfAbsent(userId, _ -> newPoiCreateBucket());
+        Bucket bucket = poiCreateBuckets.get(userId);
+        return getRetryAfter(bucket);
+    }
+
+    public long getRegisterRetryAfterSeconds(String ip) {
+        Bucket bucket = registerBuckets.get(ip);
+        return getRetryAfter(bucket);
+    }
+
+    public long getLoginRetryAfterSeconds(String ip) {
+        Bucket bucket = loginBuckets.get(ip);
+        return getRetryAfter(bucket);
+    }
+
+    private long getRetryAfter(Bucket bucket) {
+        if (bucket == null) return 0L;
+
+        if (bucket.getAvailableTokens() > 0) return 0L;
+
         long nanos = bucket.estimateAbilityToConsume(1).getNanosToWaitForRefill();
+
+        if (nanos <= 0) return 0L;
+
         return Math.max(1L, Duration.ofNanos(nanos).toSeconds());
     }
 
-    private Bucket newPoiCreateBucket() {
-        Bandwidth limit = Bandwidth.builder()
-                .capacity(poiCreateCapacity)
-                .refillIntervally(poiCreateCapacity, Duration.ofHours(poiCreatePeriodHours))
-                .build();
+    private Bucket newBucket(long capacity, Duration period) {
         return Bucket.builder()
-                .addLimit(limit)
+                .addLimit(Bandwidth.builder()
+                        .capacity(capacity)
+                        .refillIntervally(capacity, period)
+                        .build())
                 .build();
     }
 }

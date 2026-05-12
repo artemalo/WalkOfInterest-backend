@@ -16,13 +16,21 @@ public class AuthController implements AuthControllerApi {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
+    public ResponseEntity<AuthResponse> register(
+            @Valid @RequestBody RegisterRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest) {
+
+        String ip = httpRequest.getRemoteAddr();
+        return ResponseEntity.ok(authService.register(request, ip));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<AuthResponse> login(
+            @Valid @RequestBody LoginRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest) {
+
+        String ip = httpRequest.getRemoteAddr();
+        return ResponseEntity.ok(authService.login(request, ip));
     }
 
     @PostMapping("/refresh")

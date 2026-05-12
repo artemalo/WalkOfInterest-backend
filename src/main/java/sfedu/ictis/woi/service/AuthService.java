@@ -32,7 +32,17 @@ public class AuthService {
 
     private final ApplicationConfig applicationConfig;
 
-    public AuthResponse register(RegisterRequest request) {
+    private final RateLimiterService rateLimiterService;
+
+    public AuthResponse register(RegisterRequest request, String ip) {
+        if (!rateLimiterService.tryConsumeRegister(ip)) {
+            long retryAfter = rateLimiterService.getRegisterRetryAfterSeconds(ip);
+            throw new RateLimitExceededException(
+                    "Слишком много попыток регистрации. Попробуйте через " + retryAfter + "с",
+                    retryAfter
+            );
+        }
+
         if (userRepository.existsByUsername(request.username())) {
             throw new UserAlreadyExistsException("Логин занят: " + request.username());
         }
@@ -58,7 +68,15 @@ public class AuthService {
         return new AuthResponse(accessToken, refreshToken);
     }
 
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request, String ip) {
+        if (!rateLimiterService.tryConsumeLogin(ip)) {
+            long retryAfter = rateLimiterService.getLoginRetryAfterSeconds(ip);
+            throw new RateLimitExceededException(
+                    "Слишком много попыток входа. Попробуйте через " + retryAfter + "с",
+                    retryAfter
+            );
+        }
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.email(), request.password())
