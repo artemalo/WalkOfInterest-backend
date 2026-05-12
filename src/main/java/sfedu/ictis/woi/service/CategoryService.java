@@ -14,7 +14,6 @@ import sfedu.ictis.woi.repository.CategoryRepository;
 import sfedu.ictis.woi.repository.SubcategoryRepository;
 
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 

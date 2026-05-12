@@ -1,11 +1,13 @@
 package sfedu.ictis.woi.api;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,15 +36,23 @@ public interface GenerateControllerApi {
             @ApiResponse(responseCode = "400", description = "Некорректные входные данные")
     })
     @PostMapping("/route")
-    ResponseEntity<RouteResponse> getFromToRoute(@RequestBody RouteFromToRequest request);
+    ResponseEntity<RouteResponse> getFromToRoute(
+            @RequestBody RouteFromToRequest request
+    );
 
     @Operation(
             summary = "Поиск POI",
             description = "Ищет точки интереса и оптимизирует их список с учетом временных ограничений"
     )
-    @ApiResponse(responseCode = "200", description = "Список найденных и отфильтрованных точек")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Список найденных и отфильтрованных точек"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован")
+    })
     @PostMapping("/search")
-    ResponseEntity<SearchResponse> search(@RequestBody SearchRequest request);
+    ResponseEntity<SearchResponse> search(
+            @Parameter(hidden = true) Authentication authentication,
+            @Valid @RequestBody SearchRequest request
+    );
 
     @Operation(
             summary = "Получить время из множества точек",
@@ -53,7 +63,9 @@ public interface GenerateControllerApi {
             @ApiResponse(responseCode = "400", description = "Некорректные входные данные")
     })
     @PostMapping("/time")
-    ResponseEntity<Long> getTime(@RequestBody List<PointDTO> request);
+    ResponseEntity<Long> getTime(
+            @RequestBody List<PointDTO> request
+    );
 
     @Operation(
             summary = "Пересчитать порядок выбранных POI",

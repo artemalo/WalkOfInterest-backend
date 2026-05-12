@@ -13,7 +13,6 @@ import sfedu.ictis.woi.model.entity.UserEntity;
 import sfedu.ictis.woi.projection.FlatPoiProjection;
 import sfedu.ictis.woi.projection.PoiNearbyProjection;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 

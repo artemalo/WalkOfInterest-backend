@@ -27,12 +27,10 @@ public interface RouteControllerApi {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Маршрут успешно построен"),
-            @ApiResponse(responseCode = "400", description = "Некорректные входные данные"),
-            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован")
+            @ApiResponse(responseCode = "400", description = "Некорректные входные данные")
     })
     @PostMapping("/routes")
     ResponseEntity<List<RouteDTO>> getRoutes(
-            @Parameter(hidden = true) Authentication authentication,
             @RequestBody List<PointDTO> categories
     );
 }

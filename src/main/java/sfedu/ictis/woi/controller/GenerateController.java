@@ -1,7 +1,9 @@
 package sfedu.ictis.woi.controller;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.api.GenerateControllerApi;
 import sfedu.ictis.woi.mapper.SearchRequestMapper;
@@ -14,6 +16,7 @@ import sfedu.ictis.woi.model.dto.PointDTO;
 import sfedu.ictis.woi.model.dto.ReorderRequest;
 import sfedu.ictis.woi.service.OptimizationService;
 import sfedu.ictis.woi.service.GenerateService;
+import sfedu.ictis.woi.service.UserService;
 
 import java.util.List;
 
@@ -23,32 +26,47 @@ public class GenerateController implements GenerateControllerApi {
     private final GenerateService generateService;
     private final OptimizationService optimizationService;
 
-    public GenerateController(GenerateService generateService, OptimizationService optimizationService) {
+    private final UserService userService;
+
+    public GenerateController(GenerateService generateService, OptimizationService optimizationService,
+                              UserService userService) {
         this.generateService = generateService;
         this.optimizationService = optimizationService;
+        this.userService = userService;
     }
 
     @PostMapping("/route")
-    public ResponseEntity<RouteResponse> getFromToRoute(@RequestBody RouteFromToRequest request) {
+    public ResponseEntity<RouteResponse> getFromToRoute(
+            @RequestBody RouteFromToRequest request
+    ) {
         return ResponseEntity.ok(generateService.getRoute(request.getP1(), request.getP2()));
     }
 
     @PostMapping("/search")
-    public ResponseEntity<SearchResponse> search(@Valid @RequestBody SearchRequest request) {
+    public ResponseEntity<SearchResponse> search(
+            @Parameter(hidden = true) Authentication authentication,
+            @Valid @RequestBody SearchRequest request
+    ) {
         SearchResponse response = generateService.findAllPois(request);
 
         optimizationService.optimize(response, SearchRequestMapper.toDTO(request));
+
+        userService.incrementTrips(authentication);
 
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/time")
-    public ResponseEntity<Long> getTime(@RequestBody List<PointDTO> request) {
+    public ResponseEntity<Long> getTime(
+            @RequestBody List<PointDTO> request
+    ) {
         return ResponseEntity.ok(generateService.getTime(request));
     }
 
     @PostMapping("/reorder")
-    public ResponseEntity<List<PoiOrderDTO>> reorder(@RequestBody ReorderRequest request) {
+    public ResponseEntity<List<PoiOrderDTO>> reorder(
+            @RequestBody ReorderRequest request
+    ) {
         return ResponseEntity.ok(optimizationService.reorder(request));
     }
 }
