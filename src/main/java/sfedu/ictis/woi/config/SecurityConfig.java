@@ -69,7 +69,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/css/**", "/js/**", "/images/**", "/swagger-ui/**", "/api-docs/**").permitAll()
+                        .requestMatchers("/login", "/css/**", "/js/**", "/images/**", "/avatars/**", "/swagger-ui/**", "/api-docs/**").permitAll()
                         .requestMatchers("/panel/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

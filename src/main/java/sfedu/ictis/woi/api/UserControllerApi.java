@@ -6,9 +6,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sfedu.ictis.woi.model.UpdateProfileRequest;
 import sfedu.ictis.woi.model.UpdateUsernameRequest;
 import sfedu.ictis.woi.model.dto.ReviewDTO;
@@ -28,6 +30,42 @@ public interface UserControllerApi {
     ResponseEntity<UserProfileDTO> getMyProfile(
             @Parameter(hidden = true) Authentication authentication
     );
+
+    @Operation(
+            summary = "Обновить информацию профиля",
+            description = "Позволяет изменить имя, фамилию и био (о себе) текущего пользователя"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Данные профиля успешно обновлены"),
+            @ApiResponse(responseCode = "400", description = "Ошибка валидации входных данных"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован")
+    })
+    @PatchMapping("/me/info")
+    ResponseEntity<UserProfileDTO> updateProfileInfo(
+            @Parameter(hidden = true) Authentication authentication,
+            @Valid @RequestBody UpdateProfileRequest request
+    );
+
+    @Operation(
+            summary = "Загрузить фото профиля",
+            description = "Позволяет текущему пользователю загрузить или заменить аватар профиля"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Фото профиля успешно обновлено"),
+            @ApiResponse(responseCode = "400", description = "Некорректный файл или ошибка валидации"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован"),
+            @ApiResponse(responseCode = "413", description = "Файл слишком большой"),
+            @ApiResponse(responseCode = "415", description = "Неподдерживаемый тип файла")
+    })
+    @PostMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    ResponseEntity<UserProfileDTO> uploadPhoto(
+            @Parameter(hidden = true) Authentication authentication,
+
+            @Parameter(description = "Файл изображения (jpg, jpeg, png, webp)", required = true)
+            @RequestParam("photo") MultipartFile photo
+    );
+
 
     @Operation(summary = "Получить профиль пользователя по никнейму")
     @ApiResponses({
@@ -63,20 +101,5 @@ public interface UserControllerApi {
     ResponseEntity<UserProfileDTO> updateUsername(
             @Parameter(hidden = true) Authentication authentication,
             @Valid @RequestBody UpdateUsernameRequest request
-    );
-
-    @Operation(
-            summary = "Обновить информацию профиля",
-            description = "Позволяет изменить имя, фамилию и био (о себе) текущего пользователя"
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Данные профиля успешно обновлены"),
-            @ApiResponse(responseCode = "400", description = "Ошибка валидации входных данных"),
-            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован")
-    })
-    @PatchMapping("/me/info")
-    ResponseEntity<UserProfileDTO> updateProfileInfo(
-            @Parameter(hidden = true) Authentication authentication,
-            @Valid @RequestBody UpdateProfileRequest request
     );
 }

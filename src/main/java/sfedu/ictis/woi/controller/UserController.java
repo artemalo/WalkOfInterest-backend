@@ -3,9 +3,11 @@ package sfedu.ictis.woi.controller;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sfedu.ictis.woi.api.UserControllerApi;
 import sfedu.ictis.woi.model.UpdateProfileRequest;
 import sfedu.ictis.woi.model.UpdateUsernameRequest;
@@ -28,20 +30,6 @@ public class UserController implements UserControllerApi {
         return ResponseEntity.ok(userService.getMyProfile(authentication));
     }
 
-    @GetMapping("/{username}")
-    public ResponseEntity<UserProfileDTO> getProfileByUsername(@PathVariable String username) {
-        return ResponseEntity.ok(userService.getProfileByUsername(username));
-    }
-
-    @GetMapping("/{username}/reviews")
-    public ResponseEntity<List<ReviewDTO>> getReviewsByUsername(
-            @PathVariable String username,
-            @Parameter(hidden = true) Authentication authentication,
-            @RequestParam(defaultValue = "default") String lang
-    ) {
-        return ResponseEntity.ok(userService.getReviewsByUsername(username, authentication, lang));
-    }
-
     @PatchMapping("/me")
     public ResponseEntity<UserProfileDTO> updateUsername(
             @Parameter(hidden = true) Authentication authentication,
@@ -56,5 +44,28 @@ public class UserController implements UserControllerApi {
             @Valid @RequestBody UpdateProfileRequest request
     ) {
         return ResponseEntity.ok(userService.updateProfileInfo(authentication, request));
+    }
+
+    @PostMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserProfileDTO> uploadPhoto(
+            @Parameter(hidden = true) Authentication authentication,
+            @RequestParam("photo") MultipartFile photo
+    ) {
+        return ResponseEntity.ok(userService.uploadPhoto(authentication, photo));
+    }
+
+
+    @GetMapping("/{username}")
+    public ResponseEntity<UserProfileDTO> getProfileByUsername(@PathVariable String username) {
+        return ResponseEntity.ok(userService.getProfileByUsername(username));
+    }
+
+    @GetMapping("/{username}/reviews")
+    public ResponseEntity<List<ReviewDTO>> getReviewsByUsername(
+            @PathVariable String username,
+            @Parameter(hidden = true) Authentication authentication,
+            @RequestParam(defaultValue = "default") String lang
+    ) {
+        return ResponseEntity.ok(userService.getReviewsByUsername(username, authentication, lang));
     }
 }

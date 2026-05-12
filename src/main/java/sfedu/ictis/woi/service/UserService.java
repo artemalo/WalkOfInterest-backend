@@ -2,8 +2,18 @@ package sfedu.ictis.woi.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import sfedu.ictis.woi.exception.BusinessException;
+import sfedu.ictis.woi.exception.FileStorageException;
 import sfedu.ictis.woi.exception.InvalidCredentialsException;
 import sfedu.ictis.woi.exception.ResourceNotFoundException;
 import sfedu.ictis.woi.exception.UserAlreadyExistsException;
@@ -31,6 +41,13 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
+    @Value("${app.upload.dir:uploads}")
+    private String uploadDir;
+
+    @Value("${app.base-url:http://157.22.202.106}")
+    private String baseUrl;
+
     private final UserRepository userRepository;
     private final UserStatsRepository userStatsRepository;
     private final PoiRepository poiRepository;
@@ -110,6 +127,38 @@ public class UserService {
     }
 
     @Transactional
+    public UserProfileDTO uploadPhoto(Authentication authentication, MultipartFile file) {
+        UserEntity user = getAuthenticatedUser(authentication);
+
+        String ext = extractExtension(file);
+
+        String filename = user.getId() + "_" + System.currentTimeMillis() + ext;
+
+        try {
+            Path avatarsDir = Paths.get(uploadDir, "avatars").toAbsolutePath();
+            Files.createDirectories(avatarsDir);
+
+            String oldPhotoUrl = user.getPhotoUrl();
+            if (oldPhotoUrl != null && oldPhotoUrl.contains("/avatars/")) {
+                String oldFilename = oldPhotoUrl.substring(oldPhotoUrl.lastIndexOf('/') + 1);
+                Path oldFile = avatarsDir.resolve(oldFilename);
+                Files.deleteIfExists(oldFile);
+            }
+
+            file.transferTo(avatarsDir.resolve(filename).toFile());
+        } catch (IOException e) {
+            throw new FileStorageException("Не удалось сохранить файл: " + e.getMessage());
+        }
+
+        user.setPhotoUrl(baseUrl + "/avatars/" + filename);
+        userRepository.save(user);
+
+        long count = reviewRepository.countByUser(user);
+        UserStatsEntity stats = getOrCreateStats(user);
+        return UserMapper.mapToProfileDTO(user, count, stats);
+    }
+
+    @Transactional
     public void incrementTrips(Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);
         UserStatsEntity stats = getOrCreateStats(user);
@@ -128,6 +177,20 @@ public class UserService {
     }
 
 
+
+    private @NonNull String extractExtension(MultipartFile file) {
+        if (file.isEmpty()) throw new BusinessException("Файл не выбран");
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new BusinessException("Допускаются только изображения");
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        return (originalFilename != null && originalFilename.contains("."))
+                ? originalFilename.substring(originalFilename.lastIndexOf('.'))
+                : ".jpg";
+    }
 
     private Map<Long, int[]> collectLikesMap(List<ReviewEntity> reviews) {
         List<Long> reviewIds = reviews.stream().map(ReviewEntity::getId).toList();

@@ -106,6 +106,15 @@ public class GlobalExceptionHandler {
             .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
   }
 
+  // 500 Internal Server Error - Ошибка файлового хранилища
+  @ExceptionHandler(FileStorageException.class)
+  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+  public ResponseEntity<ErrorResponse> handleFileStorage(FileStorageException ex) {
+    log.error("Ошибка файлового хранилища: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new ErrorResponse(ex.getCode(), ex.getMessage()));
+  }
+
   // 500 Internal Server Error - Отлов всех непредвиденных ошибок (ОБЯЗАТЕЛЬНО!)
   @ExceptionHandler(Exception.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
