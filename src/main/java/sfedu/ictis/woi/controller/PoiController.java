@@ -2,11 +2,13 @@ package sfedu.ictis.woi.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.api.PoiControllerApi;
 import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.service.PoiService;
+import sfedu.ictis.woi.service.UserService;
 
 import java.util.List;
 
@@ -15,6 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PoiController implements PoiControllerApi {
     private final PoiService poiService;
+    private final UserService userService;
 
     @GetMapping("/{id}")
     public PoiInfoDTO getPoiById(
@@ -66,11 +69,15 @@ public class PoiController implements PoiControllerApi {
     }
 
     @PostMapping
-    public PoiInfoDTO createPoi(@RequestBody PoiAddDTO poi) {
-        return poiService.createPoi(
-                poi,
-                SecurityContextHolder.getContext().getAuthentication()
-        );
+    public PoiInfoDTO createPoi(
+            @RequestBody PoiAddDTO poi
+    ) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        PoiInfoDTO poiInfoDTO = poiService.createPoi(poi, authentication);
+        userService.incrementSpots(authentication);
+
+        return poiInfoDTO;
     }
 
     @PostMapping("/check")

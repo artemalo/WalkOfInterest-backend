@@ -33,6 +33,9 @@ public class UserEntity {
     @Column(name = "user_bio", length = 255)
     private String bio;
 
+    @Column(name = "photo_url", length = 500)
+    private String photoUrl;
+
     @Enumerated(EnumType.STRING)
     private UserRole role;
 

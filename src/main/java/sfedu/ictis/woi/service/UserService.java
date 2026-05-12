@@ -12,11 +12,15 @@ import sfedu.ictis.woi.model.UpdateProfileRequest;
 import sfedu.ictis.woi.model.dto.ReactionType;
 import sfedu.ictis.woi.model.dto.ReviewDTO;
 import sfedu.ictis.woi.model.dto.UserProfileDTO;
+import sfedu.ictis.woi.model.entity.PoiStatus;
 import sfedu.ictis.woi.model.entity.ReviewEntity;
 import sfedu.ictis.woi.model.entity.UserEntity;
+import sfedu.ictis.woi.model.entity.UserStatsEntity;
+import sfedu.ictis.woi.repository.PoiRepository;
 import sfedu.ictis.woi.repository.ReviewLikeRepository;
 import sfedu.ictis.woi.repository.ReviewRepository;
 import sfedu.ictis.woi.repository.UserRepository;
+import sfedu.ictis.woi.repository.UserStatsRepository;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,21 +32,25 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final UserStatsRepository userStatsRepository;
+    private final PoiRepository poiRepository;
     private final ReviewRepository reviewRepository;
     private final ReviewLikeRepository reviewLikeRepository;
     private final ReviewLikeService reviewLikeService;
 
     public UserProfileDTO getMyProfile(Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);
-        long count = reviewRepository.countByUser(user);
-        return UserMapper.mapToProfileDTO(user, count);
+        long countComments = reviewRepository.countByUser(user);
+        UserStatsEntity stats = getOrCreateStats(user);
+        return UserMapper.mapToProfileDTO(user, countComments, stats);
     }
 
     public UserProfileDTO getProfileByUsername(String username) {
         UserEntity user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден: " + username));
-        long count = reviewRepository.countByUser(user);
-        return UserMapper.mapToProfileDTO(user, count);
+        long countComments = reviewRepository.countByUser(user);
+        UserStatsEntity stats = getOrCreateStats(user);
+        return UserMapper.mapToProfileDTO(user, countComments, stats);
     }
 
     public List<ReviewDTO> getReviewsByUsername(String username, Authentication authentication, String lang) {
@@ -70,7 +78,8 @@ public class UserService {
         UserEntity user = getAuthenticatedUser(authentication);
 
         if (newUsername.equalsIgnoreCase(user.getUsername())) {
-            return UserMapper.mapToProfileDTO(user, reviewRepository.countByUser(user));
+            UserStatsEntity stats = getOrCreateStats(user);
+            return UserMapper.mapToProfileDTO(user, reviewRepository.countByUser(user), stats);
         }
 
         if (userRepository.existsByUsername(newUsername)) {
@@ -81,7 +90,8 @@ public class UserService {
         userRepository.save(user);
 
         long count = reviewRepository.countByUser(user);
-        return UserMapper.mapToProfileDTO(user, count);
+        UserStatsEntity stats = getOrCreateStats(user);
+        return UserMapper.mapToProfileDTO(user, count, stats);
     }
 
     @Transactional
@@ -95,7 +105,26 @@ public class UserService {
         userRepository.save(user);
 
         long count = reviewRepository.countByUser(user);
-        return UserMapper.mapToProfileDTO(user, count);
+        UserStatsEntity stats = getOrCreateStats(user);
+        return UserMapper.mapToProfileDTO(user, count, stats);
+    }
+
+    @Transactional
+    public void incrementTrips(Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
+        UserStatsEntity stats = getOrCreateStats(user);
+
+        stats.setCountTrips(stats.getCountTrips() + 1);
+        userStatsRepository.save(stats);
+    }
+
+    @Transactional
+    public void incrementSpots(Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
+        UserStatsEntity stats = getOrCreateStats(user);
+
+        stats.setCountSpots(stats.getCountSpots() + 1);
+        userStatsRepository.save(stats);
     }
 
 
@@ -133,5 +162,18 @@ public class UserService {
         }
         return userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+    }
+
+    private UserStatsEntity getOrCreateStats(UserEntity user) {
+        return userStatsRepository.findByUser(user)
+                .orElseGet(() -> {
+                    long countSpots = poiRepository.countByUserAndStatus(user, PoiStatus.APPROVED);
+                    UserStatsEntity newStats = UserStatsEntity.builder()
+                            .user(user)
+                            .countTrips(0)
+                            .countSpots((int) countSpots)
+                            .build();
+                    return userStatsRepository.save(newStats);
+                });
     }
 }

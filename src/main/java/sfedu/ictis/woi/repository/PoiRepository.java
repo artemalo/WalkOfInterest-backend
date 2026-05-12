@@ -133,16 +133,12 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
             @Param("limit") int limit
     );
 
-    /**
-     * Сколько POI пользователь создал начиная с указанного времени
-     * rate-limit fallback
-     */
     @Query("""
         SELECT COUNT(p) FROM PoiEntity p
         WHERE p.user = :user
-          AND p.lastUpdate >= :since
+          AND p.status = :status
         """)
-    long countByUserSince(@Param("user") UserEntity user, @Param("since") LocalDateTime since);
+    long countByUserAndStatus(@Param("user") UserEntity user, @Param("status") PoiStatus status);
 
     @Query(value = "SELECT * FROM pois WHERE id = :id", nativeQuery = true)
     Optional<PoiEntity> findByIdIncludingDeleted(@Param("id") Long id);

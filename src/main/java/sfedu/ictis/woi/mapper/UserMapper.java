@@ -7,6 +7,7 @@ import sfedu.ictis.woi.model.dto.UserProfileDTO;
 import sfedu.ictis.woi.model.entity.PoiLanguesEntity;
 import sfedu.ictis.woi.model.entity.ReviewEntity;
 import sfedu.ictis.woi.model.entity.UserEntity;
+import sfedu.ictis.woi.model.entity.UserStatsEntity;
 
 import java.util.List;
 
@@ -14,16 +15,16 @@ public class UserMapper {
 
     private UserMapper() {}
 
-    public static UserProfileDTO mapToProfileDTO(UserEntity user, long countComments) {
+    public static UserProfileDTO mapToProfileDTO(UserEntity user, long countComments, UserStatsEntity stats) {
         return UserProfileDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .bio(user.getBio())
-                .photoUrl(null)   // TODO: UserEntity
-                .countTrips(null)    // TODO: new table trips
-                .countSpots(null)    // TODO: new table spots
+                .photoUrl(user.getPhotoUrl())
+                .countTrips(stats != null ? stats.getCountTrips() : 0)
+                .countSpots(stats != null ? stats.getCountSpots() : 0)
                 .countComments((int) countComments)
                 .build();
     }
@@ -48,7 +49,7 @@ public class UserMapper {
         return ReviewDTO.builder()
                 .id(review.getId())
                 .authorUsername(author != null ? author.getUsername() : null)
-                .authorAvatarUrl(null) // TODO: photo UserEntity
+                .authorAvatarUrl(author != null ? author.getPhotoUrl() : null)
                 .poiId(review.getPoi() != null ? review.getPoi().getId() : null)
                 .poiName(extractPoiName(review, targetLang))
                 .content(review.getText())
