@@ -10,19 +10,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import sfedu.ictis.woi.exception.AccessDeniedException;
-import sfedu.ictis.woi.exception.BusinessException;
-import sfedu.ictis.woi.exception.InvalidCredentialsException;
-import sfedu.ictis.woi.exception.PoiAlreadyExistsException;
-import sfedu.ictis.woi.exception.RateLimitExceededException;
-import sfedu.ictis.woi.exception.ResourceNotFoundException;
+import org.springframework.web.multipart.MultipartFile;
+import sfedu.ictis.woi.exception.*;
 import sfedu.ictis.woi.mapper.PoiMapper;
 import sfedu.ictis.woi.mapper.UserMapper;
 import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.model.entity.*;
 import sfedu.ictis.woi.projection.PoiNearbyProjection;
 import sfedu.ictis.woi.repository.*;
+import sfedu.ictis.woi.util.ImageCompressionUtils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -48,6 +49,12 @@ public class PoiService {
 
     @Value("${app.poi.check.radius-meters:50}")
     private double checkRadiusMeters;
+
+    @Value("${app.upload.dir:uploads}")
+    private String uploadDir;
+
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
@@ -332,6 +339,58 @@ public class PoiService {
                     );
                 })
                 .toList();
+    }
+
+    @Transactional
+    public PoiInfoDTO uploadPoiPhoto(Long id, MultipartFile file, Authentication authentication, String lang) {
+        UserEntity user = getAuthenticatedUser(authentication);
+        PoiEntity poi = poiRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
+
+        boolean hasPhoto = poi.getPhoto() != null;
+        boolean isAdmin  = user.getRole() == UserRole.ADMIN;
+
+        if (hasPhoto && !isAdmin) {
+            throw new AccessDeniedException("Заменить существующее фото места может только администратор");
+        }
+
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException("Файл не выбран");
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new BusinessException("Допускаются только изображения");
+        }
+
+        String filename = "poi_" + id + "_" + System.currentTimeMillis() + ".jpg";
+
+        try {
+            Path poisDir = Paths.get(uploadDir, "pois").toAbsolutePath();
+            Files.createDirectories(poisDir);
+
+            PoiPhotoEntity photoEntity = poi.getPhoto();
+
+            if (photoEntity != null && photoEntity.getPhotoUrl() != null) {
+                String oldFilename = photoEntity.getPhotoUrl()
+                        .substring(photoEntity.getPhotoUrl().lastIndexOf('/') + 1);
+                Files.deleteIfExists(poisDir.resolve(oldFilename));
+            } else {
+                photoEntity = new PoiPhotoEntity();
+                photoEntity.setPoi(poi);
+            }
+
+            ImageCompressionUtils.compressAndSaveAsJpg(file, poisDir.resolve(filename), 0.3f);
+
+            photoEntity.setPhotoUrl(baseUrl + "/pois/" + filename);
+            poi.setPhoto(photoEntity);
+
+            poiRepository.save(poi);
+
+        } catch (IOException e) {
+            throw new FileStorageException("Не удалось сохранить фото POI: " + e.getMessage());
+        }
+
+        return PoiMapper.mapToInfoDTO(poi, lang);
     }
 
 

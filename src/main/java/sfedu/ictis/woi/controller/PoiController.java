@@ -2,9 +2,12 @@ package sfedu.ictis.woi.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import sfedu.ictis.woi.api.PoiControllerApi;
 import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.service.PoiService;
@@ -102,5 +105,19 @@ public class PoiController implements PoiControllerApi {
                 poi,
                 SecurityContextHolder.getContext().getAuthentication()
         );
+    }
+
+    @PostMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PoiInfoDTO> uploadPoiPhoto(
+            @PathVariable Long id,
+            @RequestParam("photo") MultipartFile photo,
+            @RequestParam(defaultValue = "ru") String lang
+    ) {
+        return ResponseEntity.ok(poiService.uploadPoiPhoto(
+                id,
+                photo,
+                SecurityContextHolder.getContext().getAuthentication(),
+                lang
+        ));
     }
 }

@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.model.dto.*;
 
@@ -99,5 +101,29 @@ public interface PoiControllerApi {
     PoiInfoDTO supplementPoi(
             @PathVariable Long id,
             @RequestBody PoiAddDTO poi
+    );
+
+    @Operation(
+            summary = "Загрузить фотографию для POI",
+            description = "Загружает и сжимает изображение для точки интереса. " +
+                    "Обычный пользователь может загрузить фото только если оно отсутствует. " +
+                    "Администратор может заменять существующие фотографии."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Фотография успешно загружена"),
+            @ApiResponse(responseCode = "400", description = "Файл не выбран или не является изображением"),
+            @ApiResponse(responseCode = "401", description = "Не авторизован"),
+            @ApiResponse(responseCode = "403", description = "Попытка заменить существующее фото без прав администратора"),
+            @ApiResponse(responseCode = "404", description = "POI не найден")
+    })
+    @PostMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    ResponseEntity<PoiInfoDTO> uploadPoiPhoto(
+            @PathVariable Long id,
+
+            @Parameter(description = "Файл изображения (JPG/PNG)")
+            @RequestPart("photo") org.springframework.web.multipart.MultipartFile photo,
+
+            @Parameter(description = "Язык ответа (ru/en)")
+            @RequestParam(defaultValue = "ru") String lang
     );
 }

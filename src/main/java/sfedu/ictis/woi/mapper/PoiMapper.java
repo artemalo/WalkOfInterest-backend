@@ -36,6 +36,11 @@ public class PoiMapper {
             dto.setCountRate(0);
         }
 
+        PoiPhotoEntity photo = entity.getPhoto();
+        if (photo != null) {
+            dto.setPhotoUrl(photo.getPhotoUrl());
+        }
+
         return dto;
     }
 

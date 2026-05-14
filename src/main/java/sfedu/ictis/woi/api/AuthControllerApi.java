@@ -26,7 +26,8 @@ public interface AuthControllerApi {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Пользователь успешно зарегистрирован"),
             @ApiResponse(responseCode = "400", description = "Ошибка валидации данных"),
-            @ApiResponse(responseCode = "409", description = "Пользователь уже существует")
+            @ApiResponse(responseCode = "409", description = "Пользователь уже существует"),
+            @ApiResponse(responseCode = "429", description = "Слишком много попыток регистрации")
     })
     @PostMapping("/register")
     ResponseEntity<AuthResponse> register(

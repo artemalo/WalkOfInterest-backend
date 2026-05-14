@@ -58,15 +58,17 @@ public class PoiEntity {
     @Column(name = "rejection_reason", length = 1000)
     private String rejectionReason;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @OneToMany(mappedBy = "poi", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PoiLanguesEntity> locales = new ArrayList<>();
 
     @OneToOne(mappedBy = "poi", cascade = CascadeType.ALL)
     private PoiRatingsEntity rating;
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
+    @OneToOne(mappedBy = "poi", cascade = CascadeType.ALL, orphanRemoval = true)
+    private PoiPhotoEntity photo;
 
 
     public boolean isUserGenerated() {

@@ -23,4 +23,6 @@ public class PoiInfoDTO {
 
     private Double rating;
     private Integer countRate;
+
+    private String photoUrl;
 }
