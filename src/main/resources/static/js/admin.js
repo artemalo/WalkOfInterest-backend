@@ -8,7 +8,7 @@ const STATUS_META = {
 };
 
 const ACTION_META = {
-    CREATED:        { label: 'Создана',              icon: '✦' },
+    CREATED:        { label: 'Создана',               icon: '✦' },
     UPDATED:        { label: 'Обновлена',             icon: '✎' },
     SUPPLEMENTED:   { label: 'Дополнена',             icon: '＋' },
     STATUS_CHANGED: { label: 'Статус изменён',        icon: '⇄' },
@@ -20,7 +20,6 @@ let currentPage   = 0;
 let pendingRejectId = null;
 let pendingDeleteId = null;
 
-// Debounce-таймер для поиска
 let searchDebounceTimer = null;
 
 // ─────────────────── JWT ───────────────────
@@ -88,7 +87,6 @@ function formatDateTime(iso) {
 // ─────────────────── Init ───────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Вкладки
     const tabs = document.querySelectorAll('.tab-btn');
     tabs.forEach(tab => {
         tab.addEventListener('click', e => {
@@ -101,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Поиск (debounce 350 мс)
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
         searchInput.addEventListener('input', () => {
@@ -114,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Координаты: поиск при потере фокуса
     ['coord-lat', 'coord-lon'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -126,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Фильтр владельца
     const ownerFilter = document.getElementById('owner-filter');
     if (ownerFilter) {
         ownerFilter.addEventListener('change', () => {
@@ -136,9 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Закрытие модалок по Escape и клику на фон
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') { closeRejectModal(); closeDeleteModal(); }
+        if (e.key === 'Escape') { closeRejectModal(); closeDeleteModal(); closePhotoModal(); }
     });
     document.getElementById('reject-modal').addEventListener('click', e => {
         if (e.target.id === 'reject-modal') closeRejectModal();
@@ -147,7 +141,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.id === 'delete-modal') closeDeleteModal();
     });
 
-    // Первая загрузка
     fetchPois();
 });
 
@@ -258,6 +251,10 @@ function renderPoiCard(poi) {
         ? `https://www.openstreetmap.org/?mlat=${point.lat}&mlon=${point.lon}#map=17/${point.lat}/${point.lon}`
         : null;
 
+    const yandexUrl = (point.lat != null && point.lon != null)
+            ? `https://yandex.ru/maps/?pt=${point.lon},${point.lat}&z=17&l=map`
+            : null;
+
     const rejectionBlock = (status === 'REJECTED' && poi.rejectionReason)
         ? `<div class="rejection-block">
                <div class="rejection-label">Причина отклонения</div>
@@ -265,12 +262,24 @@ function renderPoiCard(poi) {
            </div>`
         : '';
 
+    const photoUrl = poi.photoUrl || null;
+    const photoHtml = photoUrl
+        ? `<div class="poi-photo-wrap">
+               <img class="poi-thumb" src="${escapeHtml(photoUrl)}" alt="Фото POI"
+                    onclick="openPhotoModal('${escapeHtml(photoUrl)}')" title="Открыть фото" />
+               <button class="poi-photo-del-btn" onclick="deletePoiPhoto(${poi.id})" title="Удалить фото">✕</button>
+           </div>`
+        : `<div class="poi-photo-wrap poi-photo-empty" title="Фото отсутствует">
+               <span class="poi-photo-placeholder">нет фото</span>
+           </div>`;
+
     const item = document.createElement('div');
     item.className   = 'poi-item';
     item.dataset.poiId = poi.id;
 
     item.innerHTML = `
         <div class="poi-header">
+            ${photoHtml}
             <div class="poi-info">
                 <div class="poi-title-row">
                     <h3>${escapeHtml(poi.name) || '<span class="muted">POI без названия</span>'}</h3>
@@ -295,7 +304,8 @@ function renderPoiCard(poi) {
             <p><strong>Описание:</strong> ${escapeHtml(poi.description) || '<span class="muted">отсутствует</span>'}</p>
             <p>
                 <strong>Координаты:</strong> ${lat}, ${lon}
-                ${osmUrl ? `<a class="map-link" href="${osmUrl}" target="_blank" rel="noopener">смотреть на OSM ↗</a>` : ''}
+                ${osmUrl ? `<a class="map-link" href="${osmUrl}" target="_blank" rel="noopener">смотреть в OSM ↗</a>` : ''}
+                ${yandexUrl ? `<a class="map-link" href="${yandexUrl}" target="_blank" rel="noopener">смотреть в Яндекс ↗</a>` : ''}
             </p>
             <p><strong>Язык:</strong> <span class="lang-tag">${escapeHtml(poi.lang) || 'default'}</span></p>
             <div class="tags-container">${tagsHtml}</div>
@@ -311,6 +321,43 @@ function renderPoiCard(poi) {
 
     return item;
 }
+
+// ─────────────────── POI Photo ───────────────────
+
+window.openPhotoModal = function(url) {
+    const modal = document.getElementById('photo-modal');
+    const img   = document.getElementById('photo-modal-img');
+    if (!modal || !img) return;
+    img.src = url;
+    modal.classList.remove('hidden');
+};
+
+window.closePhotoModal = function() {
+    const modal = document.getElementById('photo-modal');
+    if (modal) modal.classList.add('hidden');
+};
+
+window.deletePoiPhoto = async function(id) {
+    if (!confirm(`Удалить фото POI #${id}? Это действие нельзя отменить.`)) return;
+
+    const res = await adminFetch(`/api/admin/pois/${id}/photo`, { method: 'DELETE' });
+
+    if (res && (res.ok || res.status === 204)) {
+        // Обновляем только карточку: убираем фото без перезагрузки всего списка
+        const card = document.querySelector(`.poi-item[data-poi-id="${id}"]`);
+        if (card) {
+            const wrap = card.querySelector('.poi-photo-wrap');
+            if (wrap) {
+                wrap.outerHTML = `<div class="poi-photo-wrap poi-photo-empty" title="Фото отсутствует">
+                    <span class="poi-photo-placeholder">нет фото</span>
+                </div>`;
+            }
+        }
+    } else if (res) {
+        const text = await res.text().catch(() => '');
+        alert(`Не удалось удалить фото (HTTP ${res.status}). ${text}`);
+    }
+};
 
 function actionButtonsFor(status, id) {
     const buttons = [];

@@ -14,7 +14,7 @@ import java.util.List;
 public class PoiAdminDTO {
     private Long id;
     private PointDTO point;
-    // TODO: list<photo>
+    private String photoUrl;
     private String name;
     private String description;
     private String lang;

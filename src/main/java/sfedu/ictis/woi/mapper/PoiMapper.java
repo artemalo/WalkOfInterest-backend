@@ -69,6 +69,11 @@ public class PoiMapper {
                     .map(PoiMapper::mapToTagNameDTO)
                     .collect(Collectors.toList()));
         }
+
+        if (entity.getPhoto() != null) {
+            dto.setPhotoUrl(entity.getPhoto().getPhotoUrl());
+        }
+
         return dto;
     }
 

@@ -48,12 +48,24 @@ public class AdminController implements AdminControllerApi {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deletePoi(@PathVariable Long id) {
+    public void deletePoi(
+            @PathVariable Long id
+    ) {
         poiService.deletePoi(id);
     }
 
+    @DeleteMapping("/{id}/photo")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletePoiPhoto(
+            @PathVariable Long id
+    ) {
+        poiService.deletePoiPhoto(id);
+    }
+
     @GetMapping("/{id}/history")
-    public List<PoiHistoryDTO> getPoiHistory(@PathVariable Long id) {
+    public List<PoiHistoryDTO> getPoiHistory(
+            @PathVariable Long id
+    ) {
         return poiService.getPoiHistory(id);
     }
 }

@@ -67,9 +67,19 @@ public interface AdminControllerApi {
 
     @Operation(summary = "Удалить POI (только со статусом REJECTED)")
     @DeleteMapping("/{id}")
-    void deletePoi(@PathVariable Long id);
+    void deletePoi(
+            @PathVariable Long id
+    );
+
+    @Operation(summary = "Удалить фото POI")
+    @DeleteMapping("/{id}/photo")
+    void deletePoiPhoto(
+            @PathVariable Long id
+    );
 
     @Operation(summary = "История изменений POI")
     @GetMapping("/{id}/history")
-    List<PoiHistoryDTO> getPoiHistory(@PathVariable Long id);
+    List<PoiHistoryDTO> getPoiHistory(
+            @PathVariable Long id
+    );
 }
