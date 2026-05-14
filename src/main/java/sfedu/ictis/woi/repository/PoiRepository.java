@@ -39,7 +39,7 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
         JOIN categories c ON s.category_id = c.id
         LEFT JOIN subcategories_info si ON s.id = si.subcategory_id
         LEFT JOIN poi_ratings pr ON p.id = pr.poi_id
-        LEFT JOIN pois_photos pph ON p.id = pph.poi_id
+        LEFT JOIN poi_photos pph ON p.id = pph.poi_id
         LEFT JOIN LATERAL (
             SELECT
             	langue,
