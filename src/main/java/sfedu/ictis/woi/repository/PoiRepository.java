@@ -30,7 +30,7 @@ public interface PoiRepository extends JpaRepository<PoiEntity, Long> {
             pl.langue as poiLang, pl.poi_name as poiName, pl.poi_description as poiDesc,
             COALESCE(pr.avg_rate, 0.0) as rate,
             COALESCE(pr.count_rate, 0) as count,
-            pph.url as photoUrl,
+            pph.photo_url as photoUrl,
             ST_X(ST_Centroid(p.geom)) as lon,
             ST_Y(ST_Centroid(p.geom)) as lat
         FROM pois p
