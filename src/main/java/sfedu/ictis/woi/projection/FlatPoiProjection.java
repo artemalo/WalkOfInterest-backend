@@ -27,6 +27,7 @@ public interface FlatPoiProjection {
     Integer getCount();
     PoiStatus getStatus();
     Long getUserId();
+    String getPhotoUrl();
 
     // Coordinate
     Double getLat();

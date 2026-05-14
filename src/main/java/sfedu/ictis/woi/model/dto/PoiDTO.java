@@ -23,6 +23,7 @@ public class PoiDTO {
     private Boolean selected = false;
     private Double rate;
     private Integer count;
+    private String photo;
 
     private PoiStatus status;
     private boolean userGenerated;

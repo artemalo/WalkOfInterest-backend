@@ -76,6 +76,7 @@ public class DataMapper {
                                             PoiDTO poi = new PoiDTO();
                                             poi.setId(rp.winner().getPoiId());
                                             poi.setName(rp.winner().getPoiName());
+                                            poi.setPhoto(rp.winner().getPhotoUrl());
                                             poi.setDescription(rp.winner().getPoiDesc());
                                             poi.setLang(rp.winner().getPoiLang());
                                             poi.setLat(rp.winner().getLat());
