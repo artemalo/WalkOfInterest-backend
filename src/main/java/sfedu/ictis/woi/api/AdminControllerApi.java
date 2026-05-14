@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.model.dto.PoiAdminDTO;
 import sfedu.ictis.woi.model.dto.PoiHistoryDTO;
+import sfedu.ictis.woi.model.dto.PointDTO;
 import sfedu.ictis.woi.model.entity.PoiStatus;
 
 import java.util.List;
@@ -75,6 +76,24 @@ public interface AdminControllerApi {
     @DeleteMapping("/{id}/photo")
     void deletePoiPhoto(
             @PathVariable Long id
+    );
+
+    @Operation(
+            summary = "Скорректировать координаты POI",
+            description = "Позволяет администратору уточнить местоположение точки. " +
+                    "Ограничения: статус точки должен быть PENDING, " +
+                    "а максимальное смещение не должно превышать 15 метров."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Координаты успешно обновлены"),
+            @ApiResponse(responseCode = "400", description = "Слишком большое смещение или точка не в статусе PENDING")
+    })
+    @PatchMapping("/{id}/location")
+    PoiAdminDTO adjustPoiLocation(
+            @PathVariable Long id,
+
+            @Parameter(description = "Новые координаты")
+            @RequestBody PointDTO point
     );
 
     @Operation(summary = "История изменений POI")

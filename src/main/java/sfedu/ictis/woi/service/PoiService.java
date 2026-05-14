@@ -18,6 +18,7 @@ import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.model.entity.*;
 import sfedu.ictis.woi.projection.PoiNearbyProjection;
 import sfedu.ictis.woi.repository.*;
+import sfedu.ictis.woi.util.HaversineMeters;
 import sfedu.ictis.woi.util.ImageCompressionUtils;
 
 import java.io.IOException;
@@ -336,6 +337,38 @@ public class PoiService {
         return poiPage.getContent().stream()
                 .map(entity -> PoiMapper.mapToAdminDTO(entity, targetLang))
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public PoiAdminDTO adjustPoiLocation(Long id, PointDTO newPoint) {
+        if (newPoint == null || newPoint.getLat() == null || newPoint.getLon() == null) {
+            throw new BusinessException("Координаты не указаны");
+        }
+
+        PoiEntity entity = poiRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + id));
+
+        if (entity.getStatus() != PoiStatus.PENDING) {
+            throw new BusinessException("Корректировка координат доступна только для PENDING точек");
+        }
+
+        if (entity.getGeom() != null) {
+            double origLat = entity.getGeom().getCentroid().getY();
+            double origLon = entity.getGeom().getCentroid().getX();
+
+            double distanceMeters = HaversineMeters.haversineMeters(origLat, origLon, newPoint.getLat(), newPoint.getLon());
+            if (distanceMeters > 15.0) {
+                throw new BusinessException(
+                        String.format("Смещение слишком большое: %.1f м (максимум 15 м)", distanceMeters)
+                );
+            }
+        }
+
+        Point point = geometryFactory.createPoint(new Coordinate(newPoint.getLon(), newPoint.getLat()));
+        entity.setGeom(point);
+        poiRepository.save(entity);
+
+        return PoiMapper.mapToAdminDTO(entity, "default");
     }
 
     @Transactional

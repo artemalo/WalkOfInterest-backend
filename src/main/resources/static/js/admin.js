@@ -262,6 +262,22 @@ function renderPoiCard(poi) {
            </div>`
         : '';
 
+    const locationBlock = (status === 'PENDING' && point.lat != null && point.lon != null)
+        ? `<div class="location-adjust-section">
+               <div class="location-adjust-title">Корректировка координат <span class="location-adjust-hint">(макс. 15 м)</span></div>
+               <div class="location-adjust-row">
+                   <label class="location-label">Широта</label>
+                   <input id="loc-lat-${poi.id}" type="number" step="0.000001" class="location-input"
+                          value="${point.lat.toFixed(6)}" />
+                   <label class="location-label">Долгота</label>
+                   <input id="loc-lon-${poi.id}" type="number" step="0.000001" class="location-input"
+                          value="${point.lon.toFixed(6)}" />
+                   <button class="btn location-apply-btn" onclick="applyLocationAdjust(${poi.id})">Применить</button>
+               </div>
+               <div class="location-feedback" id="loc-feedback-${poi.id}"></div>
+           </div>`
+        : '';
+
     const photoUrl = poi.photoUrl || null;
     const photoHtml = photoUrl
         ? `<div class="poi-photo-wrap">
@@ -309,6 +325,7 @@ function renderPoiCard(poi) {
             </p>
             <p><strong>Язык:</strong> <span class="lang-tag">${escapeHtml(poi.lang) || 'default'}</span></p>
             <div class="tags-container">${tagsHtml}</div>
+            ${locationBlock}
             <div class="history-section" id="history-${poi.id}">
                 <div class="history-header">
                     <span class="history-title">История изменений</span>
@@ -507,7 +524,61 @@ window.confirmDelete = async function() {
     }
 };
 
-// ─────────────────── Logout ───────────────────
+// Location adjust
+
+window.applyLocationAdjust = async function(id) {
+    const latInput = document.getElementById(`loc-lat-${id}`);
+    const lonInput = document.getElementById(`loc-lon-${id}`);
+    const feedback = document.getElementById(`loc-feedback-${id}`);
+    if (!latInput || !lonInput) return;
+
+    const lat = parseFloat(latInput.value);
+    const lon = parseFloat(lonInput.value);
+
+    if (isNaN(lat) || isNaN(lon)) {
+        showLocationFeedback(feedback, 'error', 'Введите корректные координаты');
+        return;
+    }
+
+    const btn = latInput.closest('.location-adjust-row')?.querySelector('.location-apply-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+
+    try {
+        const res = await adminFetch(`/api/admin/pois/${id}/location`, {
+            method: 'PATCH',
+            body: JSON.stringify({ lat, lon })
+        });
+
+        if (res && res.ok) {
+            const updated = await res.json();
+            const p = updated.point;
+            // Обновляем значения инпутов актуальными серверными координатами
+            if (p) {
+                latInput.value = p.lat.toFixed(6);
+                lonInput.value = p.lon.toFixed(6);
+            }
+            showLocationFeedback(feedback, 'ok', 'Координаты обновлены');
+        } else if (res) {
+            const body = await res.json().catch(() => null);
+            const msg  = body?.message || body?.error || `Ошибка ${res.status}`;
+            showLocationFeedback(feedback, 'error', msg);
+        }
+    } catch (e) {
+        showLocationFeedback(feedback, 'error', `Сетевая ошибка: ${e.message}`);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Применить'; }
+    }
+};
+
+function showLocationFeedback(el, type, text) {
+    if (!el) return;
+    el.textContent = text;
+    el.className = 'location-feedback ' + (type === 'ok' ? 'loc-ok' : 'loc-err');
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(() => { el.textContent = ''; el.className = 'location-feedback'; }, 4000);
+}
+
+// Logout
 
 window.logout = function() {
     localStorage.removeItem(AUTH_TOKEN_KEY);

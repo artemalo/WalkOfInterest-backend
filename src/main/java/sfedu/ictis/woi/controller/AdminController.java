@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.api.AdminControllerApi;
 import sfedu.ictis.woi.model.dto.PoiAdminDTO;
 import sfedu.ictis.woi.model.dto.PoiHistoryDTO;
+import sfedu.ictis.woi.model.dto.PointDTO;
 import sfedu.ictis.woi.model.entity.PoiStatus;
 import sfedu.ictis.woi.service.PoiService;
 
@@ -60,6 +61,14 @@ public class AdminController implements AdminControllerApi {
             @PathVariable Long id
     ) {
         poiService.deletePoiPhoto(id);
+    }
+
+    @PatchMapping("/{id}/location")
+    public PoiAdminDTO adjustPoiLocation(
+            @PathVariable Long id,
+            @RequestBody PointDTO point
+    ) {
+        return poiService.adjustPoiLocation(id, point);
     }
 
     @GetMapping("/{id}/history")

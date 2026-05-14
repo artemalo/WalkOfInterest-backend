@@ -11,6 +11,7 @@ import sfedu.ictis.woi.exception.ExternalServiceException;
 import sfedu.ictis.woi.model.RouteResponse;
 import sfedu.ictis.woi.model.dto.PointDTO;
 import sfedu.ictis.woi.model.dto.RouteDTO;
+import sfedu.ictis.woi.util.HaversineMeters;
 import tools.jackson.databind.JsonNode;
 
 import java.util.*;
@@ -135,7 +136,9 @@ public class GraphHopperClient implements GraphHopperRequest {
                                                  long maxAcceptableTime) {
         List<EdgeInfo> edges = new ArrayList<>();
         for (int i = 0; i < waypoints.size() - 1; i++) {
-            double dist = haversineMeters(waypoints.get(i), waypoints.get(i + 1));
+            PointDTO a = waypoints.get(i);
+            PointDTO b = waypoints.get(i + 1);
+            double dist = HaversineMeters.haversineMeters(a.getLat(), a.getLon(), b.getLat(), b.getLon());
             edges.add(new EdgeInfo(i, dist));
         }
 
@@ -270,18 +273,6 @@ public class GraphHopperClient implements GraphHopperRequest {
             if (seen.add(key)) unique.add(r);
         }
         return unique;
-    }
-
-    private double haversineMeters(PointDTO a, PointDTO b) {
-        double R = 6_371_000.0;
-        double dLat = Math.toRadians(b.getLat() - a.getLat());
-        double dLon = Math.toRadians(b.getLon() - a.getLon());
-        double rLat1 = Math.toRadians(a.getLat());
-        double rLat2 = Math.toRadians(b.getLat());
-        double sinDLat = Math.sin(dLat / 2);
-        double sinDLon = Math.sin(dLon / 2);
-        double aa = sinDLat * sinDLat + Math.cos(rLat1) * Math.cos(rLat2) * sinDLon * sinDLon;
-        return 2 * R * Math.atan2(Math.sqrt(aa), Math.sqrt(1 - aa));
     }
 
     private List<PointDTO> mapToPointList(JsonNode coordsNode) {

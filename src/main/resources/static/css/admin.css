@@ -665,6 +665,96 @@
     word-break: break-word;
 }
 
+.location-adjust-section {
+    margin-top: 1.1em;
+    padding: 0.75em 0.9em;
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.6em;
+}
+
+.location-adjust-title {
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #9b9b9b;
+    margin-bottom: 0.6em;
+}
+
+.location-adjust-hint {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #666;
+    font-size: 0.95em;
+}
+
+.location-adjust-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    flex-wrap: wrap;
+}
+
+.location-label {
+    font-size: 0.82em;
+    color: #9b9b9b;
+    white-space: nowrap;
+}
+
+.location-input {
+    width: 130px;
+    background-color: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.4em;
+    color: #e0e0e0;
+    font-size: 0.88em;
+    padding: 0.35em 0.6em;
+    box-sizing: border-box;
+    font-family: monospace;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
+}
+
+.location-input::-webkit-outer-spin-button,
+.location-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.location-input:focus {
+    outline: none;
+    border-color: #4B8F8C;
+}
+
+.location-apply-btn {
+    font-size: 0.82em;
+    padding: 0.35em 0.8em;
+    white-space: nowrap;
+    background-color: rgba(75, 143, 140, 0.2);
+    border-color: rgba(75, 143, 140, 0.45);
+    color: #5fb6b1;
+}
+
+.location-apply-btn:hover:not(:disabled) {
+    background-color: rgba(75, 143, 140, 0.38);
+}
+
+.location-apply-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.location-feedback {
+    font-size: 0.8em;
+    margin-top: 0.4em;
+    min-height: 1.2em;
+}
+
+.location-feedback.loc-ok  { color: #6fbf85; }
+.location-feedback.loc-err { color: #f06a64; }
+
 /* Фото POI в карточке */
 .poi-photo-wrap {
     position: relative;
