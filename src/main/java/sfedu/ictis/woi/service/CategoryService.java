@@ -1,10 +1,12 @@
 package sfedu.ictis.woi.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import sfedu.ictis.woi.exception.ResourceNotFoundException;
+import sfedu.ictis.woi.model.dto.CategoryPhotoDTO;
 import sfedu.ictis.woi.model.dto.CategoryWithSubcategoriesDTO;
 import sfedu.ictis.woi.model.dto.PageResponseDTO;
 import sfedu.ictis.woi.model.dto.SubcategoryShortDTO;
@@ -23,7 +25,13 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final SubcategoryRepository subcategoryRepository;
 
-    public List<CategoryWithSubcategoriesDTO> getAllCategories(String lang) {
+    @Value("${app.upload.dir:uploads}")
+    private String uploadDir;
+
+    @Value("${app.base-url}")
+    private String baseUrl;
+
+    public List<CategoryWithSubcategoriesDTO> getAllCategories() {
         List<CategoryEntity> categories = categoryRepository.findAllCategories();
 
         return categories.stream()
@@ -31,8 +39,15 @@ public class CategoryService {
                         cat.getId(),
                         cat.getName(),
                         cat.getIcon(),
-                        Collections.emptyList()     // lazy loading
+                        Collections.emptyList()
                 ))
+                .collect(Collectors.toList());
+    }
+
+    public List<CategoryPhotoDTO> getCategoryPhotos() {
+        return categoryRepository.findAllCategories().stream()
+                .filter(cat -> cat.getIcon() != null && !cat.getIcon().isBlank())
+                .map(cat -> new CategoryPhotoDTO(cat.getId(), cat.getIcon()))
                 .collect(Collectors.toList());
     }
 

@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
+import sfedu.ictis.woi.model.dto.CategoryPhotoDTO;
 import sfedu.ictis.woi.model.dto.CategoryWithSubcategoriesDTO;
 import sfedu.ictis.woi.model.dto.PageResponseDTO;
 import sfedu.ictis.woi.model.dto.SubcategoryShortDTO;
@@ -19,20 +20,20 @@ import java.util.List;
 @RequestMapping("/api/categories")
 public interface CategoryControllerApi {
 
-    @Operation(
-            summary = "Получить список категорий (без подкатегорий)",
-            description = "Возвращает только категории. Подкатегории грузятся отдельно через /{id}/subcategories"
-    )
+    @Operation(summary = "Получить список категорий (без подкатегорий)")
     @GetMapping
     List<CategoryWithSubcategoriesDTO> getAllCategories(
             @Parameter(description = "Язык ответа (ru/en)")
             @RequestParam(defaultValue = "ru") String lang
     );
 
+    @Operation(summary = "Получить фото всех категорий")
+    @GetMapping("/photos")
+    List<CategoryPhotoDTO> getCategoryPhotos();
+
     @Operation(
             summary = "Подкатегории категории с пагинацией и поиском",
-            description = "Возвращает страницу подкатегорий для указанной категории. " +
-                    "Параметр search фильтрует по подстроке в имени (регистронезависимо)."
+            description = "Возвращает страницу подкатегорий для указанной категории."
     )
     @GetMapping("/{id}/subcategories")
     PageResponseDTO<SubcategoryShortDTO> getSubcategoriesByCategory(

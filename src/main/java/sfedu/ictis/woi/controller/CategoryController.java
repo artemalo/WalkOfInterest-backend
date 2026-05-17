@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.api.CategoryControllerApi;
+import sfedu.ictis.woi.model.dto.CategoryPhotoDTO;
 import sfedu.ictis.woi.model.dto.CategoryWithSubcategoriesDTO;
 import sfedu.ictis.woi.model.dto.PageResponseDTO;
 import sfedu.ictis.woi.model.dto.SubcategoryShortDTO;
@@ -21,7 +22,12 @@ public class CategoryController implements CategoryControllerApi {
     public List<CategoryWithSubcategoriesDTO> getAllCategories(
             @RequestParam(defaultValue = "ru") String lang
     ) {
-        return categoryService.getAllCategories(lang);
+        return categoryService.getAllCategories();
+    }
+
+    @GetMapping("/photos")
+    public List<CategoryPhotoDTO> getCategoryPhotos() {
+        return categoryService.getCategoryPhotos();
     }
 
     @GetMapping("/{id}/subcategories")
