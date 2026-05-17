@@ -23,5 +23,9 @@ public class WebConfig implements WebMvcConfigurer {
         Path poisPath = Paths.get(uploadDir, "pois").toAbsolutePath();
         registry.addResourceHandler("/pois/**")
                 .addResourceLocations(poisPath.toUri() + "/");
+
+        Path iconsPath = Paths.get(uploadDir, "icons").toAbsolutePath();
+        registry.addResourceHandler("/icons/**")
+                .addResourceLocations(iconsPath.toUri() + "/");
     }
 }
