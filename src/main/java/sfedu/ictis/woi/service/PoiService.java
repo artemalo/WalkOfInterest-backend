@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import sfedu.ictis.woi.exception.*;
 import sfedu.ictis.woi.mapper.PoiMapper;
-import sfedu.ictis.woi.mapper.UserMapper;
 import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.model.entity.*;
 import sfedu.ictis.woi.projection.PoiNearbyProjection;
@@ -43,8 +42,6 @@ public class PoiService {
     private final PoiHistoryRepository poiHistoryRepository;
 
     private final ReviewRepository reviewRepository;
-    private final ReviewLikeRepository reviewLikeRepository;
-    private final ReviewLikeService reviewLikeService;
     private final ReviewService reviewService;
 
     private final RateLimiterService rateLimiterService;
@@ -226,22 +223,7 @@ public class PoiService {
 
         ReviewEntity saved = reviewRepository.save(review);
 
-        int likes = 0;
-        int dislikes = 0;
-        var aggregates = reviewLikeRepository.aggregateByReviewIds(List.of(saved.getId()));
-        for (var agg : aggregates) {
-            if (Boolean.TRUE.equals(agg.getValue())) {
-                likes = agg.getCnt().intValue();
-            } else if (Boolean.FALSE.equals(agg.getValue())) {
-                dislikes = agg.getCnt().intValue();
-            }
-        }
-
-        ReactionType myReaction = reviewLikeService
-                .collectMyReactions(user.getId(), List.of(saved.getId()))
-                .get(saved.getId());
-
-        return UserMapper.mapToReviewDTO(saved, likes, dislikes, myReaction, lang);
+        return reviewService.enrichAndMapReviews(List.of(saved), authentication, lang).getFirst();
     }
 
     public List<ReviewDTO> getReviewsByPoiId(Long poiId, Authentication authentication, String lang) {
