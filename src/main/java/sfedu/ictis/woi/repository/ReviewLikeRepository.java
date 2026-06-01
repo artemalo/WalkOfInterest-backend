@@ -12,17 +12,22 @@ import java.util.Optional;
 
 @Repository
 public interface ReviewLikeRepository extends JpaRepository<ReviewLikeEntity, ReviewLikeId> {
+
     @Query("""
         SELECT rl.review.id AS reviewId, rl.value AS value, COUNT(rl) AS cnt
         FROM ReviewLikeEntity rl
-        WHERE rl.review.id IN :reviewIds
-        GROUP BY rl.review.id, rl.value
+        JOIN rl.review r
+        JOIN r.poi p
+        WHERE r.id IN :reviewIds
+        GROUP BY r.id, rl.value
     """)
     List<ReviewLikeAggregate> aggregateByReviewIds(@Param("reviewIds") List<Long> reviewIds);
 
     @Query("""
         SELECT rl FROM ReviewLikeEntity rl
-        WHERE rl.user.id = :userId AND rl.review.id IN :reviewIds
+        JOIN FETCH rl.review r
+        JOIN FETCH r.poi p
+        WHERE rl.user.id = :userId AND r.id IN :reviewIds
     """)
     List<ReviewLikeEntity> findByUserAndReviews(
             @Param("userId") Long userId,
@@ -31,7 +36,9 @@ public interface ReviewLikeRepository extends JpaRepository<ReviewLikeEntity, Re
 
     @Query("""
         SELECT rl FROM ReviewLikeEntity rl
-        WHERE rl.user.id = :userId AND rl.review.id = :reviewId
+        JOIN FETCH rl.review r
+        JOIN FETCH r.poi p
+        WHERE rl.user.id = :userId AND r.id = :reviewId
     """)
     Optional<ReviewLikeEntity> findByUserAndReview(
             @Param("userId") Long userId,
