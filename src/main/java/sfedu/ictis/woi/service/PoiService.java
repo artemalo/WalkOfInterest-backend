@@ -45,6 +45,7 @@ public class PoiService {
     private final ReviewRepository reviewRepository;
     private final ReviewLikeRepository reviewLikeRepository;
     private final ReviewLikeService reviewLikeService;
+    private final ReviewService reviewService;
 
     private final RateLimiterService rateLimiterService;
 
@@ -248,19 +249,8 @@ public class PoiService {
                 .orElseThrow(() -> new ResourceNotFoundException("POI не найден: " + poiId));
 
         List<ReviewEntity> reviews = reviewRepository.findAllByPoiOrderByCreatedAtDesc(poi);
-        if (reviews.isEmpty()) return Collections.emptyList();
 
-        Map<Long, int[]> likesMap = collectLikesMap(reviews);
-        Map<Long, ReactionType> myReactions = collectMyReactions(authentication, reviews);
-
-        return reviews.stream()
-                .map(r -> {
-                    int[] ld = likesMap.getOrDefault(r.getId(), new int[]{0, 0});
-                    return UserMapper.mapToReviewDTO(
-                            r, ld[0], ld[1], myReactions.get(r.getId()), lang
-                    );
-                })
-                .toList();
+        return reviewService.enrichAndMapReviews(reviews, authentication, lang);
     }
 
     @Transactional
@@ -454,33 +444,6 @@ public class PoiService {
         return user.getRole() != UserRole.ADMIN;
     }
 
-    private Map<Long, int[]> collectLikesMap(List<ReviewEntity> reviews) {
-        List<Long> reviewIds = reviews.stream().map(ReviewEntity::getId).toList();
-        var aggregates = reviewLikeRepository.aggregateByReviewIds(reviewIds);
-
-        Map<Long, int[]> result = new HashMap<>();
-        for (var agg : aggregates) {
-            int[] ld = result.computeIfAbsent(agg.getReviewId(), _ -> new int[]{0, 0});
-            if (Boolean.TRUE.equals(agg.getValue())) {
-                ld[0] += agg.getCnt().intValue();
-            } else if (Boolean.FALSE.equals(agg.getValue())) {
-                ld[1] += agg.getCnt().intValue();
-            }
-        }
-        return result;
-    }
-
-    private Map<Long, ReactionType> collectMyReactions(Authentication authentication, List<ReviewEntity> reviews) {
-        if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
-            return Map.of();
-        }
-        Optional<UserEntity> userOpt = userRepository.findByEmail(authentication.getName());
-        if (userOpt.isEmpty()) return Map.of();
-
-        List<Long> reviewIds = reviews.stream().map(ReviewEntity::getId).toList();
-        return reviewLikeService.collectMyReactions(userOpt.get().getId(), reviewIds);
-    }
-
     private UserEntity getAuthenticatedUser(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
             throw new InvalidCredentialsException();
@@ -514,12 +477,10 @@ public class PoiService {
         }
     }
 
-    private void addOrUpdateLocale(PoiEntity entity, String lang, String name, String description) {
-        if (name == null && description == null) return;
-
+    private PoiLanguesEntity getOrCreateLocale(PoiEntity entity, String lang) {
         String targetLang = lang != null ? lang : "default";
 
-        PoiLanguesEntity locale = entity.getLocales().stream()
+        return entity.getLocales().stream()
                 .filter(l -> l.getLangue().equals(targetLang))
                 .findFirst()
                 .orElseGet(() -> {
@@ -529,6 +490,12 @@ public class PoiService {
                     entity.getLocales().add(newLocale);
                     return newLocale;
                 });
+    }
+
+    private void addOrUpdateLocale(PoiEntity entity, String lang, String name, String description) {
+        if (name == null && description == null) return;
+
+        PoiLanguesEntity locale = getOrCreateLocale(entity, lang);
 
         if (name != null) locale.setPoiName(name);
         if (description != null) locale.setPoiDescription(description);
@@ -539,18 +506,7 @@ public class PoiService {
         boolean hasDescription = description != null && !description.isBlank();
         if (!hasName && !hasDescription) return;
 
-        String targetLang = lang != null ? lang : "default";
-
-        PoiLanguesEntity locale = entity.getLocales().stream()
-                .filter(l -> l.getLangue().equals(targetLang))
-                .findFirst()
-                .orElseGet(() -> {
-                    PoiLanguesEntity newLocale = new PoiLanguesEntity();
-                    newLocale.setPoi(entity);
-                    newLocale.setLangue(targetLang);
-                    entity.getLocales().add(newLocale);
-                    return newLocale;
-                });
+        PoiLanguesEntity locale = getOrCreateLocale(entity, lang);
 
         if (hasName && (locale.getPoiName() == null || locale.getPoiName().isBlank())) {
             locale.setPoiName(name);

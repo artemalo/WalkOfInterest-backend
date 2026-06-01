@@ -19,7 +19,6 @@ import sfedu.ictis.woi.exception.ResourceNotFoundException;
 import sfedu.ictis.woi.exception.UserAlreadyExistsException;
 import sfedu.ictis.woi.mapper.UserMapper;
 import sfedu.ictis.woi.model.UpdateProfileRequest;
-import sfedu.ictis.woi.model.dto.ReactionType;
 import sfedu.ictis.woi.model.dto.ReviewDTO;
 import sfedu.ictis.woi.model.dto.UserProfileDTO;
 import sfedu.ictis.woi.model.entity.PoiStatus;
@@ -27,16 +26,11 @@ import sfedu.ictis.woi.model.entity.ReviewEntity;
 import sfedu.ictis.woi.model.entity.UserEntity;
 import sfedu.ictis.woi.model.entity.UserStatsEntity;
 import sfedu.ictis.woi.repository.PoiRepository;
-import sfedu.ictis.woi.repository.ReviewLikeRepository;
 import sfedu.ictis.woi.repository.ReviewRepository;
 import sfedu.ictis.woi.repository.UserRepository;
 import sfedu.ictis.woi.repository.UserStatsRepository;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -45,15 +39,14 @@ public class UserService {
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
-    @Value("${app.base-url:http://157.22.202.106}")
+    @Value("${app.base-url}")
     private String baseUrl;
 
     private final UserRepository userRepository;
     private final UserStatsRepository userStatsRepository;
     private final PoiRepository poiRepository;
     private final ReviewRepository reviewRepository;
-    private final ReviewLikeRepository reviewLikeRepository;
-    private final ReviewLikeService reviewLikeService;
+    private final ReviewService reviewService;
 
     public UserProfileDTO getMyProfile(Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);
@@ -75,19 +68,8 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден: " + username));
 
         List<ReviewEntity> reviews = reviewRepository.findAllByUserOrderByCreatedAtDesc(user);
-        if (reviews.isEmpty()) return Collections.emptyList();
 
-        Map<Long, int[]> likesMap = collectLikesMap(reviews);
-        Map<Long, ReactionType> myReactions = collectMyReactions(authentication, reviews);
-
-        return reviews.stream()
-                .map(r -> {
-                    int[] ld = likesMap.getOrDefault(r.getId(), new int[]{0, 0});
-                    return UserMapper.mapToReviewDTO(
-                            r, ld[0], ld[1], myReactions.get(r.getId()), lang
-                    );
-                })
-                .toList();
+        return reviewService.enrichAndMapReviews(reviews, authentication, lang);
     }
 
     @Transactional
@@ -190,33 +172,6 @@ public class UserService {
         return (originalFilename != null && originalFilename.contains("."))
                 ? originalFilename.substring(originalFilename.lastIndexOf('.'))
                 : ".jpg";
-    }
-
-    private Map<Long, int[]> collectLikesMap(List<ReviewEntity> reviews) {
-        List<Long> reviewIds = reviews.stream().map(ReviewEntity::getId).toList();
-        var aggregates = reviewLikeRepository.aggregateByReviewIds(reviewIds);
-
-        Map<Long, int[]> result = new HashMap<>();
-        for (var agg : aggregates) {
-            int[] ld = result.computeIfAbsent(agg.getReviewId(), _ -> new int[]{0, 0});
-            if (Boolean.TRUE.equals(agg.getValue())) {
-                ld[0] += agg.getCnt().intValue();
-            } else if (Boolean.FALSE.equals(agg.getValue())) {
-                ld[1] += agg.getCnt().intValue();
-            }
-        }
-        return result;
-    }
-
-    private Map<Long, ReactionType> collectMyReactions(Authentication authentication, List<ReviewEntity> reviews) {
-        if (authentication == null || !authentication.isAuthenticated() || authentication.getName() == null) {
-            return Map.of();
-        }
-        Optional<UserEntity> userOpt = userRepository.findByEmail(authentication.getName());
-        if (userOpt.isEmpty()) return Map.of();
-
-        List<Long> reviewIds = reviews.stream().map(ReviewEntity::getId).toList();
-        return reviewLikeService.collectMyReactions(userOpt.get().getId(), reviewIds);
     }
 
     private UserEntity getAuthenticatedUser(Authentication authentication) {
