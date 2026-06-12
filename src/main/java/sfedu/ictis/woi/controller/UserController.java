@@ -13,6 +13,8 @@ import sfedu.ictis.woi.model.UpdateProfileRequest;
 import sfedu.ictis.woi.model.UpdateUsernameRequest;
 import sfedu.ictis.woi.model.dto.ReviewDTO;
 import sfedu.ictis.woi.model.dto.UserProfileDTO;
+import sfedu.ictis.woi.service.RateLimitType;
+import sfedu.ictis.woi.service.RateLimiterService;
 import sfedu.ictis.woi.service.UserService;
 
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController implements UserControllerApi {
     private final UserService userService;
+    private final RateLimiterService rateLimiterService;
 
     @GetMapping("/me")
     public ResponseEntity<UserProfileDTO> getMyProfile(
@@ -35,6 +38,8 @@ public class UserController implements UserControllerApi {
             @Parameter(hidden = true) Authentication authentication,
             @Valid @RequestBody UpdateUsernameRequest request
     ) {
+        rateLimiterService.consumeOrThrow(RateLimitType.USER_RENAME, authentication.getName(),
+                "Слишком частая смена никнейма. Попробуйте завтра.");
         return ResponseEntity.ok(userService.updateUsername(authentication, request.username()));
     }
 
@@ -43,6 +48,8 @@ public class UserController implements UserControllerApi {
             @Parameter(hidden = true) Authentication authentication,
             @Valid @RequestBody UpdateProfileRequest request
     ) {
+        rateLimiterService.consumeOrThrow(RateLimitType.USER_INFO_UPDATE, authentication.getName(),
+                "Слишком много изменений профиля за час. Попробуйте позже.");
         return ResponseEntity.ok(userService.updateProfileInfo(authentication, request));
     }
 
@@ -51,6 +58,8 @@ public class UserController implements UserControllerApi {
             @Parameter(hidden = true) Authentication authentication,
             @RequestParam("photo") MultipartFile photo
     ) {
+        rateLimiterService.consumeOrThrow(RateLimitType.USER_PHOTO_UPLOAD, authentication.getName(),
+                "Превышен дневной лимит загрузки фото профиля. Попробуйте завтра.");
         return ResponseEntity.ok(userService.uploadPhoto(authentication, photo));
     }
 

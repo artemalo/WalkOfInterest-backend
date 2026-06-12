@@ -8,12 +8,15 @@ import org.springframework.web.bind.annotation.*;
 import sfedu.ictis.woi.api.AuthControllerApi;
 import sfedu.ictis.woi.model.*;
 import sfedu.ictis.woi.service.AuthService;
+import sfedu.ictis.woi.service.RateLimitType;
+import sfedu.ictis.woi.service.RateLimiterService;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController implements AuthControllerApi {
     private final AuthService authService;
+    private final RateLimiterService rateLimiterService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(
@@ -34,7 +37,12 @@ public class AuthController implements AuthControllerApi {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
+    public ResponseEntity<AuthResponse> refresh(
+            @Valid @RequestBody RefreshRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest) {
+
+        rateLimiterService.consumeOrThrow(RateLimitType.AUTH_REFRESH, httpRequest.getRemoteAddr(),
+                "Слишком много обновлений токена. Попробуйте позже.");
         return ResponseEntity.ok(authService.refresh(request.refreshToken()));
     }
 

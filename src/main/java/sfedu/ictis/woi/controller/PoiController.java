@@ -11,7 +11,10 @@ import org.springframework.web.multipart.MultipartFile;
 import sfedu.ictis.woi.api.PoiControllerApi;
 import sfedu.ictis.woi.model.dto.*;
 import sfedu.ictis.woi.service.PoiService;
+import sfedu.ictis.woi.service.RateLimitType;
+import sfedu.ictis.woi.service.RateLimiterService;
 import sfedu.ictis.woi.service.UserService;
+import sfedu.ictis.woi.util.RateLimitKey;
 
 import java.util.List;
 
@@ -21,6 +24,7 @@ import java.util.List;
 public class PoiController implements PoiControllerApi {
     private final PoiService poiService;
     private final UserService userService;
+    private final RateLimiterService rateLimiterService;
 
     @GetMapping("/{id}")
     public PoiInfoDTO getPoiById(
@@ -48,6 +52,8 @@ public class PoiController implements PoiControllerApi {
             @Valid @RequestBody ReviewRequestDTO request,
             @RequestParam(defaultValue = "ru") String lang
     ) {
+        rateLimiterService.consumeOrThrow(RateLimitType.REVIEW_UPSERT, RateLimitKey.currentUser(),
+                "Слишком много отзывов за час. Попробуйте позже.");
         return poiService.upsertMyReview(
                 id,
                 request,
@@ -61,6 +67,8 @@ public class PoiController implements PoiControllerApi {
             @PathVariable Long id,
             @RequestBody PoiAddDTO poi
     ) {
+        rateLimiterService.consumeOrThrow(RateLimitType.POI_UPDATE, RateLimitKey.currentUser(),
+                "Слишком много правок мест за час. Попробуйте позже.");
         return poiService.updatePoi(id, poi, SecurityContextHolder.getContext().getAuthentication());
     }
 
@@ -88,6 +96,8 @@ public class PoiController implements PoiControllerApi {
             @Valid @RequestBody PoiNearbyCheckRequestDTO request,
             @RequestParam(defaultValue = "ru") String lang
     ) {
+        rateLimiterService.consumeOrThrow(RateLimitType.POI_CHECK_NEARBY, RateLimitKey.currentUser(),
+                "Слишком много проверок мест за час. Попробуйте позже.");
         return poiService.checkNearby(
                 request.getPoint(),
                 lang,
@@ -100,6 +110,8 @@ public class PoiController implements PoiControllerApi {
             @PathVariable Long id,
             @RequestBody PoiAddDTO poi
     ) {
+        rateLimiterService.consumeOrThrow(RateLimitType.POI_SUPPLEMENT, RateLimitKey.currentUser(),
+                "Слишком много правок мест за час. Попробуйте позже.");
         return poiService.supplementPoi(
                 id,
                 poi,
@@ -113,6 +125,8 @@ public class PoiController implements PoiControllerApi {
             @RequestParam("photo") MultipartFile photo,
             @RequestParam(defaultValue = "ru") String lang
     ) {
+        rateLimiterService.consumeOrThrow(RateLimitType.POI_PHOTO_UPLOAD, RateLimitKey.currentUser(),
+                "Превышен дневной лимит загрузки фото. Попробуйте завтра.");
         return ResponseEntity.ok(poiService.uploadPoiPhoto(
                 id,
                 photo,

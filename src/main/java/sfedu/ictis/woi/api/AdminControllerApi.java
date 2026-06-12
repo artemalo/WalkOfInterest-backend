@@ -16,6 +16,7 @@ import java.util.List;
 @Tag(name = "Admin", description = "Админ панель POI")
 @ApiResponses({
         @ApiResponse(responseCode = "403", description = "Недостаточно прав"),
+        @ApiResponse(responseCode = "429", description = "Превышен лимит запросов (удаление: 10/сутки, изменение: 30/час)"),
         @ApiResponse(responseCode = "503", description = "Проблемы с сервисом")
 })
 @RequestMapping("/api/admin/pois")

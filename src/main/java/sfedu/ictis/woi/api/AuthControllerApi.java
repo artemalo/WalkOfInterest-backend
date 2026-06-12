@@ -65,7 +65,10 @@ public interface AuthControllerApi {
     })
     @PostMapping("/refresh")
     ResponseEntity<AuthResponse> refresh(
-            @Valid @RequestBody RefreshRequest request
+            @Valid @RequestBody RefreshRequest request,
+
+            @Parameter(hidden = true)
+            HttpServletRequest httpRequest
     );
 
     @Operation(
