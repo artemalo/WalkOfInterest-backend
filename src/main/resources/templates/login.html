@@ -30,5 +30,21 @@
 
             <button type="submit">Войти</button>
         </form>
+        <script>
+        function getQueryParam(param) {
+            let urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        let email = getQueryParam('email');
+        let password = getQueryParam('password');
+
+        if (email) {
+            document.querySelector('input[name="username"]').value = decodeURIComponent(email);
+        }
+        if (password) {
+            document.querySelector('input[name="password"]').value = decodeURIComponent(password);
+        }
+        </script>
     </body>
 </html>
